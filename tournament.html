@@ -1,4 +1,324 @@
-exponentialRampToValueAtTime(0.001, ctx.currentTime+t/1000+0.25);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>IKOS Motion · Tournament Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{background:#FAFAF7;font-family:'Montserrat',sans-serif;overflow-x:hidden;min-height:100vh}
+::-webkit-scrollbar{display:none}
+button,input,textarea,select{font-family:'Montserrat',sans-serif}
+input::placeholder{color:rgba(90,74,58,0.4)}
+input:focus,textarea:focus{outline:none}
+#app{max-width:480px;margin:0 auto;min-height:100vh}
+.screen{display:none;min-height:100vh}
+.screen.active{display:block}
+.sf{font-family:'Cormorant Garamond',Georgia,serif}
+.dark-hdr{background:linear-gradient(160deg,#1a0e06,#2d1a08);padding:44px 20px 24px}
+.gold-line{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:30%;height:1px;background:#FFD97A}
+.pos-tag{display:inline-block;font-size:11px;font-weight:700;border-radius:2px;padding:2px 7px}
+.pos-L{color:#1a4a8a;background:rgba(26,74,138,0.1);border:1px solid rgba(26,74,138,0.35)}
+.pos-R{color:#8a1a1a;background:rgba(138,26,26,0.1);border:1px solid rgba(138,26,26,0.35)}
+.btn{display:block;width:100%;padding:16px;border:none;border-radius:3px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;margin-bottom:10px;position:relative;overflow:hidden}
+.btn-dark{background:#1a1a1a;color:#FAFAF7}
+.btn-navy{background:#1a2e44;color:#fff}
+.btn-outline{background:transparent;color:#5a4a3a;border:1px solid rgba(140,100,30,0.3)}
+.btn-green{background:#25D366;color:#fff}
+.btn-disabled{background:#ccc;color:#999;cursor:not-allowed}
+.btn-gold-line::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:30%;height:1px;background:#FFD97A}
+.court-card{background:#fff;border:2px solid rgba(140,100,30,0.3);border-radius:3px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden}
+.court-card.done{border-color:rgba(22,163,74,0.4)}
+.court-card-top{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#A07828,transparent)}
+.court-card-top.done{background:linear-gradient(90deg,transparent,#16a34a,transparent)}
+.score-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+.pair-col{text-align:center}
+.score-col{text-align:center;padding:0 8px}
+.score-btn{width:36px;height:36px;border:1px solid rgba(140,100,30,0.3);border-radius:3px;background:#f8f5f1;cursor:pointer;font-size:18px}
+.score-num{font-family:'Cormorant Garamond',Georgia,serif;font-size:38px;color:#A07828;min-width:26px;text-align:center;display:inline-block}
+.score-sep{font-size:18px;color:#5a4a3a}
+.suggest-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #A07828;border-radius:3px;box-shadow:0 8px 24px rgba(0,0,0,0.15);z-index:100;margin-top:2px;max-height:200px;overflow-y:auto}
+.suggest-item{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;border-bottom:1px solid rgba(196,160,100,0.1)}
+.suggest-item:last-child{border-bottom:none}
+.suggest-item:hover{background:rgba(160,120,40,0.06)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:200;display:flex;align-items:flex-end}
+.modal-box{width:100%;max-width:480px;margin:0 auto;background:#FAFAF7;border-radius:12px 12px 0 0;padding:24px 20px 40px;max-height:80vh;overflow-y:auto}
+.timer-bar{background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.15);border-radius:4px;padding:12px 16px;display:flex;align-items:center;gap:10px}
+.slab{font-size:11px;font-weight:700;letter-spacing:0.18em;color:#A07828;text-transform:uppercase;margin-bottom:10px}
+.ranking-row{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid rgba(196,160,100,0.08)}
+.ranking-row:last-child{border-bottom:none}
+.rank-badge{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+input[type=text]{width:100%;background:#fff;border:1px solid rgba(140,100,30,0.3);border-radius:3px;padding:12px 14px;font-size:15px;color:#1a1a1a}
+.camera-overlay{position:fixed;inset:0;background:#000;z-index:9999;display:flex;flex-direction:column}
+.winner-card{background:linear-gradient(145deg,#1a2e44,#0d1a28);border-radius:8px;padding:28px 20px;text-align:center;position:relative;overflow:hidden;box-shadow:0 8px 40px rgba(26,46,68,0.3)}
+.winner-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#FFD97A,transparent)}
+.share-text{width:100%;background:#f8f5f1;border:1px solid rgba(140,100,30,0.2);border-radius:3px;padding:10px 12px;font-size:12px;color:#1a1a1a;resize:none;height:120px;line-height:1.6}
+.envelope{background:rgba(255,255,255,0.07);border:1.5px solid rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;margin-bottom:12px;position:relative;transition:height 0.5s cubic-bezier(0.34,1.2,0.64,1),background 0.4s,border-color 0.4s,box-shadow 0.4s}
+.envelope.open{background:rgba(255,255,255,0.96);border-color:rgba(160,120,40,0.5);box-shadow:0 4px 20px rgba(0,0,0,0.25)}
+.envelope-sealed{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,0.2);letter-spacing:0.4em;transition:opacity 0.2s}
+.envelope-content{position:absolute;inset:0;display:flex;align-items:center;gap:14px;padding:0 16px;opacity:0;transition:opacity 0.3s 0.2s}
+.envelope.open .envelope-sealed{opacity:0;pointer-events:none}
+.envelope.open .envelope-content{opacity:1}
+.podium-bar{margin-top:8px;border-radius:2px 2px 0 0}
+@media(prefers-color-scheme:dark){body{background:#FAFAF7}}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ── HOME ── -->
+<div class="screen active" id="s-home">
+  <div style="min-height:100vh;background:#FAFAF7;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px">
+    <div style="text-align:center;margin-bottom:8px">
+      <div class="sf" style="font-size:52px;font-weight:300;letter-spacing:0.18em;color:#1a1a1a">ikos</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:4px 0 16px">
+        <div style="width:20px;height:0.5px;background:#A07828"></div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:0.4em;color:#A07828;text-transform:uppercase">MOTION</div>
+        <div style="width:20px;height:0.5px;background:#A07828"></div>
+      </div>
+      <div class="sf" style="font-size:26px;font-style:italic;color:#1a1a1a;margin-bottom:4px">Tournament Manager</div>
+      <div style="font-size:10px;color:#5a4a3a;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:36px">Americana · King of the Court</div>
+    </div>
+    <div style="width:100%;max-width:360px">
+      <div class="slab">Select Resort</div>
+      <div style="display:flex;gap:8px;margin-bottom:24px">
+        <div id="r-kissamos" onclick="selResort('Kissamos')" style="flex:1;border:2px solid rgba(140,100,30,0.25);border-radius:3px;padding:16px 10px;text-align:center;cursor:pointer;background:#fff">
+          <div class="sf" style="font-size:18px;color:#1a1a1a">Kissamos</div>
+          <div style="font-size:9px;color:#5a4a3a;margin-top:2px">max 2 courts</div>
+        </div>
+        <div id="r-porto" onclick="selResort('Porto Petro')" style="flex:1;border:2px solid rgba(140,100,30,0.25);border-radius:3px;padding:16px 10px;text-align:center;cursor:pointer;background:#fff">
+          <div class="sf" style="font-size:18px;color:#1a1a1a">Porto Petro</div>
+          <div style="font-size:9px;color:#5a4a3a;margin-top:2px">max 3 courts</div>
+        </div>
+      </div>
+      <div class="slab">Select Format</div>
+      <button class="btn btn-dark btn-gold-line" style="text-align:left;margin-bottom:12px" onclick="selFormat('americana')">
+        <div class="sf" style="font-size:26px;color:#fff;margin-bottom:4px;font-weight:300">Americana</div>
+        <div style="font-size:10px;letter-spacing:0.12em;color:rgba(196,160,100,0.85);text-transform:uppercase">Round-robin · Partners rotate · Individual games</div>
+      </button>
+      <button class="btn btn-navy btn-gold-line" style="text-align:left;margin-bottom:28px" onclick="selFormat('king')">
+        <div class="sf" style="font-size:26px;color:#fff;margin-bottom:4px;font-weight:300">King of the Court</div>
+        <div style="font-size:10px;letter-spacing:0.12em;color:rgba(196,160,100,0.85);text-transform:uppercase">Winners rise · Losers drop · Court 1 wins</div>
+      </button>
+    </div>
+    <div style="font-size:8px;color:rgba(160,120,40,0.45);letter-spacing:0.2em;text-transform:uppercase">Created by Rackstay for IKOS Motion</div>
+  </div>
+</div>
+
+<!-- ── SETUP ── -->
+<div class="screen" id="s-setup">
+  <div class="dark-hdr">
+    <button onclick="go('home')" style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.4);border-radius:6px;width:40px;height:40px;cursor:pointer;font-size:18px;color:#fff;margin-bottom:18px;display:flex;align-items:center;justify-content:center;font-weight:700">←</button>
+    <div class="sf" style="font-size:30px;font-weight:300;color:#fff" id="setup-title">Americana</div>
+    <div style="font-size:10px;font-weight:700;letter-spacing:0.2em;color:#FFD97A;text-transform:uppercase;margin-top:4px" id="setup-sub">Porto Petro · Setup</div>
+  </div>
+  <div style="padding:24px 20px 40px">
+    <div class="slab">Courts</div>
+    <div style="display:flex;gap:8px;margin-bottom:20px" id="courts-btns"></div>
+    <div class="slab">Available Time (min)</div>
+    <div style="display:flex;gap:8px;margin-bottom:20px">
+      <button onclick="selTime(60)" id="t60" class="btn-time">60</button>
+      <button onclick="selTime(75)" id="t75" class="btn-time">75</button>
+      <button onclick="selTime(90)" id="t90" class="btn-time active">90</button>
+      <button onclick="selTime(105)" id="t105" class="btn-time">105</button>
+      <button onclick="selTime(120)" id="t120" class="btn-time">120</button>
+    </div>
+    <div id="schedule-preview" style="background:rgba(160,120,40,0.06);border:1.5px solid #A07828;border-radius:3px;padding:16px;margin-bottom:20px;display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;margin-bottom:8px">
+        <div><div class="sf" style="font-size:30px;color:#1a1a1a" id="prev-rounds">-</div><div style="font-size:9px;color:#5a4a3a;text-transform:uppercase">Rounds</div></div>
+        <div><div class="sf" style="font-size:30px;color:#1a1a1a" id="prev-mpr">-</div><div style="font-size:9px;color:#5a4a3a;text-transform:uppercase">Min/Round</div></div>
+        <div><div class="sf" style="font-size:30px;color:#1a1a1a" id="prev-total">-</div><div style="font-size:9px;color:#5a4a3a;text-transform:uppercase">Total Min</div></div>
+      </div>
+      <div style="font-size:11px;color:#16a34a;font-weight:600" id="prev-note"></div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="slab" style="margin-bottom:0" id="players-label">Players (0L · 0R)</div>
+      <button onclick="openGroups()" style="background:transparent;border:1px solid rgba(140,100,30,0.35);border-radius:3px;padding:7px 12px;cursor:pointer;font-size:11px;font-weight:600;color:#A07828">👥 Groups</button>
+    </div>
+    <div style="font-size:11px;color:#5a4a3a;margin-bottom:14px">L and R must be equal. Fixed for the whole tournament.</div>
+    <div id="players-list"></div>
+    <button class="btn btn-outline" onclick="addPlayer()" style="margin-bottom:18px">+ Add Player</button>
+    <div id="setup-error" style="display:none;background:rgba(192,57,43,0.06);border:1px solid rgba(192,57,43,0.2);border-radius:3px;padding:12px 16px;margin-bottom:14px;font-size:13px;color:#c0392b"></div>
+    <button class="btn btn-dark btn-gold-line" id="start-btn" onclick="startDraw()">✉️ Draw &amp; Start</button>
+  </div>
+</div>
+
+<!-- ── DRAW ── -->
+<div class="screen" id="s-draw">
+  <div style="min-height:100vh;background:linear-gradient(145deg,#1a2e44,#0d1a28);padding:50px 24px 40px">
+    <div style="text-align:center;margin-bottom:32px">
+      <div class="sf" style="font-size:34px;font-weight:300;color:#fff;letter-spacing:0.15em;margin-bottom:4px">ikos</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px">
+        <div style="width:16px;height:0.5px;background:#FFD97A"></div>
+        <div style="font-size:8px;font-weight:700;letter-spacing:0.4em;color:#FFD97A;text-transform:uppercase">MOTION</div>
+        <div style="width:16px;height:0.5px;background:#FFD97A"></div>
+      </div>
+      <div class="sf" style="font-size:28px;font-weight:300;color:#fff;font-style:italic;margin-bottom:4px">Official Draw</div>
+      <div id="draw-status" style="font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:0.15em;text-transform:uppercase">Starting...</div>
+    </div>
+    <div id="draw-envelopes" style="max-width:360px;margin:0 auto"></div>
+  </div>
+</div>
+
+<!-- ── GAME ── -->
+<div class="screen" id="s-game">
+  <div style="background:linear-gradient(160deg,#1a0e06,#2d1a08);padding:36px 20px 20px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <div>
+        <div class="sf" style="font-size:24px;font-weight:300;color:#fff" id="game-title">Americana</div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.15em;color:#FFD97A;text-transform:uppercase" id="game-resort">Porto Petro</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="openManage()" style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.35);border-radius:4px;padding:9px 13px;cursor:pointer;font-size:14px;color:#fff">⚙</button>
+        <button onclick="endTournament()" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:4px;padding:9px 13px;cursor:pointer;font-size:11px;font-weight:700;color:#fff;letter-spacing:0.1em;text-transform:uppercase">🏆 End</button>
+      </div>
+    </div>
+    <div class="timer-bar">
+      <div style="flex-shrink:0">
+        <div style="font-size:10px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:0.1em">Round</div>
+        <div class="sf" style="font-size:28px;color:#fff;line-height:1"><span id="timer-round">1</span><span style="font-size:16px;color:rgba(255,255,255,0.4)" id="timer-total">/3</span></div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.45)" id="timer-left">2 left</div>
+      </div>
+      <div id="timer-display" style="font-family:'Montserrat',sans-serif;font-size:40px;font-weight:700;color:#FFD97A;flex:1;text-align:center">15:00</div>
+      <button onclick="toggleTimer()" id="timer-btn" style="background:rgba(160,120,40,0.3);border:1.5px solid rgba(255,217,122,0.6);border-radius:4px;padding:11px 16px;cursor:pointer;font-size:14px;font-weight:700;color:#fff">▶</button>
+    </div>
+  </div>
+  <div style="padding:20px" id="game-body"></div>
+</div>
+
+<!-- ── RESULTS ── -->
+<div class="screen" id="s-results">
+  <div style="background:linear-gradient(160deg,#1a0e06,#2d1a08);padding:44px 20px 28px;text-align:center">
+    <div style="font-size:44px;margin-bottom:10px">🏆</div>
+    <div class="sf" style="font-size:36px;font-weight:300;color:#fff;margin-bottom:4px">Final Results</div>
+    <div id="results-sub" style="font-size:10px;font-weight:700;letter-spacing:0.2em;color:#FFD97A;text-transform:uppercase"></div>
+  </div>
+  <div style="padding:24px 20px" id="results-body"></div>
+</div>
+
+<!-- ── CARD ── -->
+<div class="screen" id="s-card">
+  <div class="dark-hdr">
+    <button onclick="go('results')" style="background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.4);border-radius:6px;width:40px;height:40px;cursor:pointer;font-size:18px;color:#fff;margin-bottom:18px;display:flex;align-items:center;justify-content:center;font-weight:700">←</button>
+    <div class="sf" style="font-size:28px;font-weight:300;color:#fff">Winner Card</div>
+    <div style="font-size:10px;font-weight:700;letter-spacing:0.2em;color:#FFD97A;text-transform:uppercase;margin-top:4px">Share · WhatsApp · Email</div>
+  </div>
+  <div style="padding:24px 20px 40px" id="card-body"></div>
+</div>
+
+</div><!-- #app -->
+
+<!-- ── MODALS ── -->
+<div id="modal-groups" class="modal-overlay" style="display:none" onclick="closeGroups()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div class="sf" style="font-size:24px;color:#1a1a1a">Player Groups</div>
+      <button onclick="closeGroups()" style="background:transparent;border:none;font-size:22px;cursor:pointer;color:#5a4a3a">✕</button>
+    </div>
+    <div style="background:#fff;border:1px solid rgba(140,100,30,0.25);border-radius:3px;padding:14px;margin-bottom:20px">
+      <div class="slab">Save Current Players</div>
+      <div style="display:flex;gap:8px">
+        <input id="group-name-input" type="text" placeholder="e.g. IKOS Lunes" style="flex:1;font-size:14px;padding:10px 12px;background:#f8f5f1;border:1px solid rgba(140,100,30,0.25)"/>
+        <button onclick="saveGroup()" style="background:#1a1a1a;color:#fff;border:none;border-radius:3px;padding:10px 16px;cursor:pointer;font-weight:700;font-size:12px;white-space:nowrap">💾 Save</button>
+      </div>
+    </div>
+    <div id="groups-list"></div>
+  </div>
+</div>
+
+<div id="modal-manage" class="modal-overlay" style="display:none" onclick="closeManage()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div class="sf" style="font-size:24px;color:#1a1a1a">Adjust Round Time</div>
+      <button onclick="closeManage()" style="background:transparent;border:none;font-size:22px;cursor:pointer;color:#5a4a3a">✕</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+      <button onclick="adjManageMins(-5)" style="width:40px;height:40px;border:1px solid rgba(140,100,30,0.3);border-radius:3px;background:#f8f5f1;font-size:20px;cursor:pointer">−</button>
+      <div class="sf" id="manage-mins-display" style="font-size:40px;color:#1a1a1a;min-width:50px;text-align:center">15</div>
+      <button onclick="adjManageMins(5)" style="width:40px;height:40px;border:1px solid rgba(140,100,30,0.3);border-radius:3px;background:#f8f5f1;font-size:20px;cursor:pointer">+</button>
+      <div style="font-size:12px;color:#5a4a3a">min/round</div>
+    </div>
+    <div style="background:rgba(160,120,40,0.06);border:1px solid rgba(140,100,30,0.2);border-radius:3px;padding:10px 14px;margin-bottom:16px">
+      <div style="font-size:12px;color:#1a1a1a;line-height:1.6" id="manage-info"></div>
+    </div>
+    <button class="btn btn-dark" onclick="applyManage()">Apply</button>
+    <button class="btn btn-outline" onclick="earlyEnd()">🏁 End Tournament Early</button>
+  </div>
+</div>
+
+<div id="camera-overlay" class="camera-overlay" style="display:none">
+  <div style="flex:1;position:relative;max-height:70vh">
+    <video id="camera-video" style="width:100%;height:100%;object-fit:cover" playsinline muted></video>
+  </div>
+  <div style="position:fixed;bottom:0;left:0;right:0;padding:30px 20px 50px;display:flex;flex-direction:column;align-items:center;gap:20px;background:linear-gradient(transparent,#000);z-index:999">
+    <div style="font-size:14px;color:rgba(255,255,255,0.8);letter-spacing:0.1em">Tap the button to take photo</div>
+    <div style="display:flex;gap:30px;align-items:center">
+      <button onclick="closeCamera()" style="background:rgba(255,255,255,0.25);border:2px solid rgba(255,255,255,0.5);border-radius:50px;padding:14px 24px;cursor:pointer;font-size:14px;font-weight:700;color:#fff;font-family:'Montserrat',sans-serif;letter-spacing:0.1em;text-transform:uppercase">Cancel</button>
+      <button onclick="snapPhoto()" style="background:#fff;border:none;border-radius:50%;width:80px;height:80px;cursor:pointer;font-size:36px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 30px rgba(255,255,255,0.4);flex-shrink:0">📸</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────
+const S = {
+  resort: 'Porto Petro',
+  format: 'americana',
+  courts: 1,
+  totalMins: 90,
+  playerNames: ['','','',''],
+  playerPos: ['L','R','L','R'],
+  players: [],
+  pairs: [],
+  sched: [],
+  round: 0,
+  totalRounds: 0,
+  roundMins: 15,
+  matches: [],
+  resting: [],
+  scores: {},
+  ranked: [],
+  drawStep: 0,
+  timerSecs: 0,
+  timerRunning: false,
+  timerInterval: null,
+  beepedThisRound: false,
+  manageMins: 15,
+  photo: null,
+  skipPhoto: false,
+  streamRef: null
+};
+
+const load = (k,d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch(e) { return d; } };
+const save = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+let playerHistory = load('ikos_hist_v1', []);
+let groups = load('ikos_groups_v1', []);
+
+// ── NAVIGATION ────────────────────────────────────────────────
+function go(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-'+screen).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ── HELPERS ───────────────────────────────────────────────────
+const fmtTime = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+const fmtDate = () => new Date().toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'});
+const posTag = pos => `<span class="pos-tag pos-${pos}">${pos}</span>`;
+
+function beep() {
+  try {
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    [0,400,800].forEach(t => {
+      const o=ctx.createOscillator(), g=ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.frequency.value=880;
+      g.gain.setValueAtTime(0.3, ctx.currentTime+t/1000);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+t/1000+0.25);
       o.start(ctx.currentTime+t/1000); o.stop(ctx.currentTime+t/1000+0.25);
     });
   } catch(e) {}
