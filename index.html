@@ -1,1 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<title>IKOS Motion · Tournament Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{background:#FAFAF7;font-family:'Montserrat',sans-serif;min-height:100vh;overflow-x:hidden}
+::-webkit-scrollbar{display:none}
+#app{max-width:480px;margin:0 auto}
+.screen{display:none;min-height:100vh}
+.screen.active{display:block}
+.sf{font-family:'Cormorant Garamond',Georgia,serif}
+.dark-hdr{background:linear-gradient(160deg,#1a0e06,#2d1a08);padding:44px 20px 24px}
+.btn{display:block;width:100%;padding:16px;border:none;border-radius:3px;font-family:'Montserrat',sans-serif;font-size:13px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;cursor:pointer;margin-bottom:10px;position:relative;overflow:hidden;text-align:center;text-decoration:none;color:#fff}
+.btn::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:30%;height:1px;background:#FFD97A}
+.btn-dark{background:#1a1a1a}
+.btn-navy{background:#1a2e44}
+.btn-green{background:#25D366}
+.btn-outline{background:transparent;color:#5a4a3a;border:1px solid rgba(140,100,30,0.3)}
+.btn-outline::after{display:none}
+.slab{font-size:11px;font-weight:700;letter-spacing:.18em;color:#A07828;text-transform:uppercase;margin-bottom:10px}
+.tag{display:inline-block;font-size:11px;font-weight:700;border-radius:2px;padding:2px 7px}
+.tag-L{color:#1a4a8a;background:rgba(26,74,138,.1);border:1px solid rgba(26,74,138,.35)}
+.tag-R{color:#8a1a1a;background:rgba(138,26,26,.1);border:1px solid rgba(138,26,26,.35)}
+input[type=text]{width:100%;background:#fff;border:1px solid rgba(140,100,30,.3);border-radius:3px;padding:12px 14px;font-family:'Montserrat',sans-serif;font-size:15px;color:#1a1a1a;outline:none}
+textarea{font-family:'Montserrat',sans-serif;font-size:12px;width:100%;border:1px solid rgba(140,100,30,.2);border-radius:3px;padding:10px 12px;color:#1a1a1a;resize:none;outline:none;background:#f8f5f1;line-height:1.6}
+.sug-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #A07828;border-radius:3px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:100;margin-top:2px;max-height:200px;overflow-y:auto;display:none}
+.sug-item{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;border-bottom:1px solid rgba(196,160,100,.1)}
+.sug-item:last-child{border-bottom:none}
+.sug-item:active{background:rgba(160,120,40,.06)}
+.court-card{background:#fff;border:2px solid rgba(140,100,30,.3);border-radius:3px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden}
+.court-card.done{border-color:rgba(22,163,74,.4)}
+.court-top{position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,#A07828,transparent)}
+.court-top.done{background:linear-gradient(90deg,transparent,#16a34a,transparent)}
+.score-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center}
+.sc-btn{width:36px;height:36px;border:1px solid rgba(140,100,30,.3);border-radius:3px;background:#f8f5f1;cursor:pointer;color:#1a1a1a;font-size:18px;font-family:'Montserrat',sans-serif}
+.sc-num{font-family:'Cormorant Garamond',Georgia,serif;font-size:38px;color:#A07828;min-width:26px;display:inline-block;text-align:center}
+.rank-row{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid rgba(196,160,100,.08)}
+.rank-row:last-child{border-bottom:none}
+.rank-badge{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.timer-bar{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.15);border-radius:4px;padding:12px 16px;display:flex;align-items:center;gap:10px}
+.env{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:3px;overflow:hidden;margin-bottom:12px;position:relative;height:44px;transition:height .5s cubic-bezier(.34,1.2,.64,1),background .4s,border-color .4s}
+.env.open{height:64px;background:rgba(255,255,255,.96);border-color:rgba(160,120,40,.5);box-shadow:0 4px 20px rgba(0,0,0,.25)}
+.env-sealed{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:rgba(255,255,255,.2);letter-spacing:.4em}
+.env-content{position:absolute;inset:0;display:flex;align-items:center;gap:14px;padding:0 16px;opacity:0;transition:opacity .3s .2s}
+.env.open .env-sealed{opacity:0;pointer-events:none}
+.env.open .env-content{opacity:1}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:flex-end}
+.modal.open{display:flex}
+.modal-box{width:100%;max-width:480px;margin:0 auto;background:#FAFAF7;border-radius:12px 12px 0 0;padding:24px 20px 40px;max-height:80vh;overflow-y:auto}
+.cam-overlay{position:fixed;inset:0;background:#000;z-index:9999;display:none;flex-direction:column}
+.cam-overlay.open{display:flex}
+.winner-card{background:linear-gradient(145deg,#1a2e44,#0d1a28);border-radius:8px;padding:28px 20px;text-align:center;position:relative;overflow:hidden;box-shadow:0 8px 40px rgba(26,46,68,.3);margin-bottom:16px}
+.winner-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#FFD97A,transparent)}
+.toggle{width:44px;height:24px;border-radius:12px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;border:none}
+.toggle-thumb{position:absolute;top:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.2);transition:left .2s}
+</style>
+</head>
+<body>
+<div id="app">
 
+<!-- HOME -->
+<div class="screen active" id="s-home">
+  <div style="min-height:100vh;background:#FAFAF7;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px">
+    <div style="text-align:center;margin-bottom:32px">
+      <div class="sf" style="font-size:52px;font-weight:300;letter-spacing:.18em;color:#1a1a1a">ikos</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin:4px 0 14px">
+        <div style="width:20px;height:.5px;background:#A07828"></div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:.4em;color:#A07828;text-transform:uppercase">MOTION</div>
+        <div style="width:20px;height:.5px;background:#A07828"></div>
+      </div>
+      <div class="sf" style="font-size:26px;font-style:italic;color:#1a1a1a;margin-bottom:4px">Tournament Manager</div>
+      <div style="font-size:10px;color:#5a4a3a;letter-spacing:.2em;text-transform:uppercase">Americana · King of the Court</div>
+    </div>
+    <div style="width:100%;max-width:360px">
+      <div class="slab">Select Resort</div>
+      <div style="display:flex;gap:8px;margin-bottom:24px">
+        <div id="rb-kiss" onclick="pickResort('Kissamos')" style="flex:1;border:2px solid rgba(140,100,30,.25);border-radius:3px;padding:16px 10px;text-align:center;cursor:pointer;background:#fff">
+          <div class="sf" style="font-size:18px;color:#1a1a1a">Kissamos</div>
+          <div style="font-size:9px;color:#5a4a3a;margin-top:2px">max 2 courts</div>
+        </div>
+        <div id="rb-porto" onclick="pickResort('Porto Petro')" style="flex:1;border:2px solid #A07828;border-radius:3px;padding:16px 10px;text-align:center;cursor:pointer;background:rgba(160,120,40,.07)">
+          <div class="sf" style="font-size:18px;color:#1a1a1a">Porto Petro</div>
+          <div style="font-size:9px;color:#5a4a3a;margin-top:2px">max 3 courts</div>
+        </div>
+      </div>
+      <div class="slab">Select Format</div>
+      <button class="btn btn-dark" style="text-align:left;margin-bottom:12px" onclick="pickFormat('americana')">
+        <div class="sf" style="font-size:26px;color:#fff;margin-bottom:4px;font-weight:300">Americana</div>
+        <div style="font-size:10px;letter-spacing:.12em;color:rgba(196,160,100,.85);text-transform:uppercase">Round-robin · Partners rotate · Individual games</div>
+      </button>
+      <button class="btn btn-navy" style="text-align:left;margin-bottom:28px" onclick="pickFormat('king')">
+        <div class="sf" style="font-size:26px;color:#fff;margin-bottom:4px;font-weight:300">King of the Court</div>
+        <div style="font-size:10px;letter-spacing:.12em;color:rgba(196,160,100,.85);text-transform:uppercase">Winners rise · Losers drop · Min 2 courts</div>
+      </button>
+    </div>
+    <div style="font-size:8px;color:rgba(160,120,40,.45);letter-spacing:.2em;text-transform:uppercase">Created by Rackstay for IKOS Motion</div>
+  </div>
+</div>
+
+<!-- SETUP -->
+<div class="screen" id="s-setup">
+  <div class="dark-hdr">
+    <button onclick="go('home')" style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);border-radius:6px;width:40px;height:40px;cursor:pointer;font-size:18px;color:#fff;margin-bottom:18px;display:flex;align-items:center;justify-content:center;font-weight:700">←</button>
+    <div class="sf" id="setup-title" style="font-size:30px;font-weight:300;color:#fff">Americana</div>
+    <div id="setup-sub" style="font-size:10px;font-weight:700;letter-spacing:.2em;color:#FFD97A;text-transform:uppercase;margin-top:4px">Porto Petro · Setup</div>
+  </div>
+  <div style="padding:24px 20px 40px">
+    <div class="slab">Courts</div>
+    <div style="display:flex;gap:8px;margin-bottom:20px" id="courts-row"></div>
+    <div class="slab">Available Time (min)</div>
+    <div style="display:flex;gap:8px;margin-bottom:20px" id="time-row"></div>
+
+    <!-- Mix positions toggle -->
+    <div style="background:#fff;border:1px solid rgba(140,100,30,.25);border-radius:3px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#1a1a1a">Mix sides</div>
+        <div style="font-size:11px;color:#5a4a3a;margin-top:2px">Players can switch Left ↔ Right each round</div>
+      </div>
+      <button id="mix-btn" class="toggle" style="background:#d8cfc4" onclick="S.mix=!S.mix;renderMixBtn()">
+        <div id="mix-thumb" class="toggle-thumb" style="left:3px"></div>
+      </button>
+    </div>
+
+    <div id="preview-box" style="background:rgba(160,120,40,.06);border:1.5px solid #A07828;border-radius:3px;padding:16px;margin-bottom:20px;display:none">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;margin-bottom:8px">
+        <div><div class="sf" style="font-size:30px;color:#1a1a1a" id="pv-rounds">-</div><div style="font-size:9px;color:#5a4a3a;text-transform:uppercase">Rounds</div></div>
+        <div><div class="sf" style="font-size:30px;color:#1a1a1a" id="pv-mpr">-</div><div style="font-size:9px;color:#5a4a3a;text-transform:uppercase">Min/Round</div></div>
+        <div><div class="sf" style="font-size:30px;color:#1a1a1a" id="pv-total">-</div><div style="font-size:9px;color:#5a4a3a;text-transform:uppercase">Total Min</div></div>
+      </div>
+      <div style="font-size:11px;color:#16a34a;font-weight:600" id="pv-note"></div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="slab" style="margin-bottom:0" id="players-label">Players</div>
+      <button onclick="openGroups()" style="background:transparent;border:1px solid rgba(140,100,30,.35);border-radius:3px;padding:7px 12px;cursor:pointer;font-size:11px;font-weight:600;color:#A07828;font-family:'Montserrat',sans-serif">👥 Groups</button>
+    </div>
+    <div style="font-size:11px;color:#5a4a3a;margin-bottom:14px">Assign L (left) or R (right) — their natural side on court.</div>
+    <div id="players-list"></div>
+    <button class="btn btn-outline" onclick="addPlayer()" style="margin-bottom:18px">+ Add Player</button>
+    <div id="setup-err" style="display:none;background:rgba(192,57,43,.06);border:1px solid rgba(192,57,43,.2);border-radius:3px;padding:12px 16px;margin-bottom:14px;font-size:13px;color:#c0392b"></div>
+    <button class="btn btn-dark" onclick="startDraw()">✉️ Draw &amp; Start</button>
+  </div>
+</div>
+
+<!-- DRAW -->
+<div class="screen" id="s-draw">
+  <div style="min-height:100vh;background:linear-gradient(145deg,#1a2e44,#0d1a28);padding:50px 24px 40px">
+    <div style="text-align:center;margin-bottom:32px">
+      <div class="sf" style="font-size:34px;font-weight:300;color:#fff;letter-spacing:.15em;margin-bottom:4px">ikos</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px">
+        <div style="width:16px;height:.5px;background:#FFD97A"></div>
+        <div style="font-size:8px;font-weight:700;letter-spacing:.4em;color:#FFD97A;text-transform:uppercase">MOTION</div>
+        <div style="width:16px;height:.5px;background:#FFD97A"></div>
+      </div>
+      <div class="sf" style="font-size:28px;font-weight:300;color:#fff;font-style:italic;margin-bottom:4px">Official Draw</div>
+      <div id="draw-status" style="font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.15em;text-transform:uppercase">Starting...</div>
+    </div>
+    <div id="draw-envs" style="max-width:360px;margin:0 auto"></div>
+  </div>
+</div>
+
+<!-- GAME -->
+<div class="screen" id="s-game">
+  <div style="background:linear-gradient(160deg,#1a0e06,#2d1a08);padding:36px 20px 20px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px">
+      <div>
+        <div class="sf" id="game-title" style="font-size:24px;font-weight:300;color:#fff">Americana</div>
+        <div id="game-resort" style="font-size:10px;font-weight:700;letter-spacing:.15em;color:#FFD97A;text-transform:uppercase">Porto Petro</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="openManage()" style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.35);border-radius:4px;padding:9px 13px;cursor:pointer;font-size:14px;color:#fff">⚙</button>
+        <button onclick="endTournament()" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:4px;padding:9px 13px;cursor:pointer;font-size:11px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.1em;font-family:'Montserrat',sans-serif">🏆 End</button>
+      </div>
+    </div>
+    <div class="timer-bar">
+      <div style="flex-shrink:0">
+        <div style="font-size:10px;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.1em">Round</div>
+        <div class="sf" style="font-size:28px;color:#fff;line-height:1"><span id="t-round">1</span><span id="t-total" style="font-size:16px;color:rgba(255,255,255,.4)">/3</span></div>
+        <div id="t-left" style="font-size:10px;color:rgba(255,255,255,.45)">2 left</div>
+      </div>
+      <div id="t-display" style="font-size:40px;font-weight:700;color:#FFD97A;flex:1;text-align:center;font-family:'Montserrat',sans-serif">15:00</div>
+      <button id="t-btn" onclick="toggleTimer()" style="background:rgba(160,120,40,.3);border:1.5px solid rgba(255,217,122,.6);border-radius:4px;padding:11px 16px;cursor:pointer;font-size:14px;font-weight:700;color:#fff;font-family:'Montserrat',sans-serif">▶</button>
+    </div>
+  </div>
+  <div style="padding:20px" id="game-body"></div>
+</div>
+
+<!-- RESULTS -->
+<div class="screen" id="s-results">
+  <div style="background:linear-gradient(160deg,#1a0e06,#2d1a08);padding:44px 20px 28px;text-align:center">
+    <div style="font-size:44px;margin-bottom:10px">🏆</div>
+    <div class="sf" style="font-size:36px;font-weight:300;color:#fff;margin-bottom:4px">Final Results</div>
+    <div id="res-sub" style="font-size:10px;font-weight:700;letter-spacing:.2em;color:#FFD97A;text-transform:uppercase"></div>
+  </div>
+  <div style="padding:24px 20px" id="res-body"></div>
+</div>
+
+<!-- CARD -->
+<div class="screen" id="s-card">
+  <div class="dark-hdr">
+    <button onclick="go('results')" style="background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.4);border-radius:6px;width:40px;height:40px;cursor:pointer;font-size:18px;color:#fff;margin-bottom:18px;display:flex;align-items:center;justify-content:center;font-weight:700">←</button>
+    <div class="sf" style="font-size:28px;font-weight:300;color:#fff">Winner Card</div>
+    <div style="font-size:10px;font-weight:700;letter-spacing:.2em;color:#FFD97A;text-transform:uppercase;margin-top:4px">Share · Save · WhatsApp</div>
+  </div>
+  <div style="padding:24px 20px 40px" id="card-body"></div>
+</div>
+
+<!-- MODAL: GROUPS -->
+<div class="modal" id="modal-groups" onclick="closeGroups()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div class="sf" style="font-size:24px;color:#1a1a1a">Player Groups</div>
+      <button onclick="closeGroups()" style="background:transparent;border:none;font-size:22px;cursor:pointer;color:#5a4a3a">✕</button>
+    </div>
+    <div style="background:#fff;border:1px solid rgba(140,100,30,.25);border-radius:3px;padding:14px;margin-bottom:20px">
+      <div class="slab">Save Current Players</div>
+      <div style="display:flex;gap:8px">
+        <input id="g-name" type="text" placeholder="e.g. IKOS Lunes" style="flex:1;font-size:14px;background:#f8f5f1;border:1px solid rgba(140,100,30,.25)"/>
+        <button onclick="saveGroup()" style="background:#1a1a1a;color:#fff;border:none;border-radius:3px;padding:10px 16px;cursor:pointer;font-weight:700;font-size:12px;white-space:nowrap;font-family:'Montserrat',sans-serif">💾 Save</button>
+      </div>
+    </div>
+    <div id="groups-list"></div>
+  </div>
+</div>
+
+<!-- MODAL: MANAGE -->
+<div class="modal" id="modal-manage" onclick="closeManage()">
+  <div class="modal-box" onclick="event.stopPropagation()">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div class="sf" style="font-size:24px;color:#1a1a1a">Adjust Round Time</div>
+      <button onclick="closeManage()" style="background:transparent;border:none;font-size:22px;cursor:pointer;color:#5a4a3a">✕</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
+      <button onclick="adjM(-5)" style="width:44px;height:44px;border:1px solid rgba(140,100,30,.3);border-radius:3px;background:#f8f5f1;font-size:22px;cursor:pointer">−</button>
+      <div class="sf" id="m-mins" style="font-size:44px;color:#1a1a1a;min-width:60px;text-align:center">15</div>
+      <button onclick="adjM(5)" style="width:44px;height:44px;border:1px solid rgba(140,100,30,.3);border-radius:3px;background:#f8f5f1;font-size:22px;cursor:pointer">+</button>
+      <div style="font-size:12px;color:#5a4a3a">min/round</div>
+    </div>
+    <div style="background:rgba(160,120,40,.06);border:1px solid rgba(140,100,30,.2);border-radius:3px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#1a1a1a;line-height:1.6" id="m-info"></div>
+    <button class="btn btn-dark" onclick="applyManage()">Apply</button>
+    <button class="btn btn-outline" onclick="earlyEnd()">🏁 End Tournament Early</button>
+  </div>
+</div>
+
+<!-- CAMERA -->
+<div class="cam-overlay" id="cam-overlay">
+  <div style="flex:1;position:relative">
+    <video id="cam-video" style="width:100%;height:100%;object-fit:cover" playsinline muted></video>
+  </div>
+  <div style="position:fixed;bottom:0;left:0;right:0;padding:30px 20px 50px;display:flex;flex-direction:column;align-items:center;gap:20px;background:linear-gradient(transparent,#000);z-index:10000">
+    <div style="font-size:14px;color:rgba(255,255,255,.8);letter-spacing:.1em">Tap to take photo</div>
+    <div style="display:flex;gap:30px;align-items:center">
+      <button onclick="closeCamera()" style="background:rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.5);border-radius:50px;padding:14px 24px;cursor:pointer;font-size:14px;font-weight:700;color:#fff;font-family:'Montserrat',sans-serif;text-transform:uppercase;letter-spacing:.1em">Cancel</button>
+      <button onclick="snapPhoto()" style="background:#fff;border:none;border-radius:50%;width:80px;height:80px;cursor:pointer;font-size:36px;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 30px rgba(255,255,255,.4)">📸</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────
+const S = {
+  resort:'Porto Petro', format:'americana',
+  courts:1, totalMins:90,
+  names:['','','',''], pos:['L','R','L','R'],
+  mix:false,
+  players:[], sched:[],
+  round:0, totalRounds:0, roundMins:15,
+  matches:[], resting:[], scores:{},
+  ranked:[], drawStep:0, kingWinners:[],
+  secs:0, running:false, interval:null, beeped:false,
+  mMins:15, photo:null, skip:false, cam:null
+};
+
+const LS = (k,d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch(e) { return d; } };
+const LSset = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+let hist = LS('ikos_hist_v4', []);
+let grps = LS('ikos_grps_v4', []);
+
+const fmt = s => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+const fmtD = () => new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+const tag = p => `<span class="tag tag-${p}">${p}</span>`;
+const $ = id => document.getElementById(id);
+function go(s){document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'));$('s-'+s).classList.add('active');window.scrollTo(0,0);}
+
+function beep(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    [0,400,800].forEach(t=>{
+      const o=ctx.createOscillator(),g=ctx.createGain();
+      o.connect(g);g.connect(ctx.destination);
+      o.frequency.value=880;
+      g.gain.setValueAtTime(.3,ctx.currentTime+t/1000);
+      g.gain.exponentialRampToValueAtTime(.001,ctx.currentTime+t/1000+.25);
+      o.start(ctx.currentTime+t/1000);o.stop(ctx.currentTime+t/1000+.25);
+    });
+  }catch(e){}
+}
+
+// ── AMERICANA SCHEDULE ────────────────────────────────────────
+// Circle method: n-1 rounds, each player partners with everyone once
+// Each player keeps their L/R position throughout (unless mix=true)
+function buildAmSchedule(players, nC) {
+  const n=players.length;
+  if(n<4||n%2!==0) return [];
+  const fixed=players[0].idx;
+  let rot=players.slice(1).map(p=>p.idx);
+  const out=[];
+  for(let r=0;r<n-1;r++){
+    const rp=[[fixed,rot[0]]];
+    for(let i=1;i<=Math.floor((n-2)/2);i++) rp.push([rot[i],rot[n-1-i]]);
+    const ms=[];
+    for(let i=0;i+1<rp.length&&ms.length<nC;i+=2)
+      ms.push({court:ms.length+1,p1:rp[i],p2:rp[i+1],s1:0,s2:0,done:false});
+    const pl=new Set(ms.flatMap(m=>[...m.p1,...m.p2]));
+    out.push({matches:ms,resting:rp.filter(p=>!pl.has(p[0]))});
+    rot=[rot[rot.length-1],...rot.slice(0,rot.length-1)];
+  }
+  return out;
+}
+
+// ── KING OF THE COURT ─────────────────────────────────────────
+// Each court has exactly 4 players (2 pairs of 2).
+// A "slot" is {idx, side} where side is current playing side ('L' or 'R').
+// When mix=false: side = player's natural position (never changes)
+// When mix=true:  side flips each time the player moves to a new court position
+
+// Build initial court assignments
+// Court 1: slots 0-3, Court 2: slots 4-7, etc.
+// Each court: pair1=[slot0,slot1] vs pair2=[slot2,slot3]
+// slot0 and slot2 play L, slot1 and slot3 play R (or natural pos if mix=false)
+
+function initKing(players, nC) {
+  // Separate L and R players
+  const ls=players.filter(p=>p.pos==='L').sort(()=>Math.random()-.5);
+  const rs=players.filter(p=>p.pos==='R').sort(()=>Math.random()-.5);
+
+  // Build courts: each court needs 2L + 2R
+  const courts=[];
+  for(let c=0;c<nC;c++){
+    const courtLs=ls.slice(c*2,(c+1)*2);
+    const courtRs=rs.slice(c*2,(c+1)*2);
+    if(courtLs.length<2||courtRs.length<2) break;
+    // pair1: L[0] + R[0], pair2: L[1] + R[1]
+    courts.push({
+      court:c+1,
+      p1:[courtLs[0].idx, courtRs[0].idx],
+      p2:[courtLs[1].idx, courtRs[1].idx],
+      s1:0, s2:0, done:false
+    });
+  }
+  return courts;
+}
+
+// After each round, rotate players between courts
+// Court 1: winners[0] stay + winners[1] come up from court 2
+// Court 2: losers[0] drop down + losers[1] stay
+// etc.
+// When forming new pairs:
+//   Mix OFF: each player keeps their natural L/R position
+//            → the L players from both groups form left sides
+//            → the R players from both groups form right sides
+//            → new pair1 = naturalL[0] + naturalR[0]
+//            → new pair2 = naturalL[1] + naturalR[1]
+//   Mix ON:  players swap sides when they move
+//            → winners who stay: keep their side
+//            → players who move (up or down): swap their current side
+
+function kingNextRound() {
+  const winners=[], losers=[];
+  S.matches.forEach((m,ci)=>{
+    const w1=m.s1>=m.s2;
+    winners[ci]=w1?[...m.p1]:[...m.p2];
+    losers[ci]=w1?[...m.p2]:[...m.p1];
+  });
+
+  const nC=S.matches.length;
+  const newMatches=[];
+
+  for(let ci=0;ci<nC;ci++){
+    // Who arrives at this court next round?
+    let staying, arriving;
+    if(ci===0){
+      // Court 1: winners[0] stay, winners[1] arrive (rose up)
+      staying=winners[0];
+      arriving=nC>1?winners[1]:null;
+    } else {
+      // Court ci: losers[ci] stay, losers[ci-1] arrive (dropped down)
+      staying=losers[ci];
+      arriving=losers[ci-1];
+    }
+    if(!staying||!arriving) continue;
+
+    // Form 2 new pairs from 4 players
+    const pool=[...staying,...arriving];
+
+    if(!S.mix){
+      // Mix OFF: each player keeps their NATURAL position (L or R)
+      const ls=pool.filter(i=>pPos(i)==='L');
+      const rs=pool.filter(i=>pPos(i)==='R');
+      let p1,p2;
+      if(ls.length>=2&&rs.length>=2){
+        // Ideal: pair1=L0+R0, pair2=L1+R1
+        p1=[ls[0],rs[0]];
+        p2=[ls[1],rs[1]];
+      } else if(ls.length>=1&&rs.length>=1){
+        p1=[ls[0],rs[0]];
+        p2=pool.filter(i=>i!==ls[0]&&i!==rs[0]).slice(0,2);
+      } else {
+        p1=pool.slice(0,2);
+        p2=pool.slice(2,4);
+      }
+      newMatches.push({court:ci+1,p1,p2,s1:0,s2:0,done:false});
+    } else {
+      // Mix ON: players who MOVE swap their side
+      // Staying players keep their side, arriving players swap
+      // We track this by swapping natural position label for display
+      // Implementation: arriving players get their pos flipped in display
+      // We store swapped info in match metadata
+      const ls=pool.filter(i=>pPos(i)==='L');
+      const rs=pool.filter(i=>pPos(i)==='R');
+      // Shuffle to mix sides
+      const shuffled=[...pool].sort(()=>Math.random()-.5);
+      const p1=shuffled.slice(0,2);
+      const p2=shuffled.slice(2,4);
+      newMatches.push({court:ci+1,p1,p2,s1:0,s2:0,done:false,mixed:true});
+    }
+  }
+  S.matches=newMatches;
+  S.resting=[];
+}
+
+// ── PLAYER HELPERS ────────────────────────────────────────────
+const pName = idx => (S.players.find(p=>p.idx===idx)||{name:''}).name;
+const pPos  = idx => (S.players.find(p=>p.idx===idx)||{pos:'L'}).pos;
+function vp(){return S.names.map((n,i)=>({name:n.trim(),pos:S.pos[i],idx:i})).filter(p=>p.name);}
+
+// ── HOME ──────────────────────────────────────────────────────
+function pickResort(r){
+  S.resort=r;
+  if(r==='Kissamos'&&S.courts>2)S.courts=2;
+  $('rb-kiss').style.borderColor=r==='Kissamos'?'#A07828':'rgba(140,100,30,.25)';
+  $('rb-kiss').style.background=r==='Kissamos'?'rgba(160,120,40,.07)':'#fff';
+  $('rb-porto').style.borderColor=r==='Porto Petro'?'#A07828':'rgba(140,100,30,.25)';
+  $('rb-porto').style.background=r==='Porto Petro'?'rgba(160,120,40,.07)':'#fff';
+}
+
+function pickFormat(f){S.format=f;S.names=['','','',''];S.pos=['L','R','L','R'];renderSetup();go('setup');}
+
+// ── SETUP ─────────────────────────────────────────────────────
+function renderMixBtn(){
+  $('mix-btn').style.background=S.mix?'#A07828':'#d8cfc4';
+  $('mix-thumb').style.left=S.mix?'23px':'3px';
+}
+
+function renderSetup(){
+  const isAm=S.format==='americana';
+  $('setup-title').textContent=isAm?'Americana':'King of the Court';
+  $('setup-sub').textContent=S.resort+' · Setup';
+  const maxC=S.resort==='Kissamos'?2:3;
+
+  // Courts — King needs min 2
+  const minC=isAm?1:2;
+  if(S.courts<minC)S.courts=minC;
+  $('courts-row').innerHTML=[1,2,3].filter(c=>c<=maxC&&(isAm||c>=2)).map(c=>
+    `<button onclick="pickCourt(${c})" style="flex:1;padding:14px 8px;border:2px solid ${S.courts===c?'#A07828':'rgba(140,100,30,.25)'};border-radius:3px;background:${S.courts===c?'rgba(160,120,40,.08)':'#fff'};cursor:pointer;font-family:'Cormorant Garamond',Georgia,serif;font-size:26px;color:#1a1a1a">${c}</button>`
+  ).join('');
+
+  $('time-row').innerHTML=[60,75,90,105,120].map(t=>
+    `<button onclick="pickTime(${t})" style="flex:1;padding:12px 4px;border:2px solid ${S.totalMins===t?'#A07828':'rgba(140,100,30,.25)'};border-radius:3px;background:${S.totalMins===t?'rgba(160,120,40,.08)':'#fff'};cursor:pointer;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:${S.totalMins===t?700:500};color:${S.totalMins===t?'#1a1a1a':'#5a4a3a'}">${t}</button>`
+  ).join('');
+
+  renderMixBtn();
+  renderPlayers();
+  updatePreview();
+}
+
+function pickCourt(c){S.courts=c;renderSetup();}
+function pickTime(t){S.totalMins=t;renderSetup();}
+
+function updatePreview(){
+  const p=vp();
+  const nL=p.filter(x=>x.pos==='L').length,nR=p.filter(x=>x.pos==='R').length;
+  $('players-label').textContent=`Players (${nL}L · ${nR}R)`;
+  const box=$('preview-box');
+  if(S.format==='americana'&&p.length>=4&&p.length%2===0){
+    const rounds=p.length-1,mpr=Math.max(8,Math.round(S.totalMins/rounds));
+    $('pv-rounds').textContent=rounds;$('pv-mpr').textContent=mpr;$('pv-total').textContent=S.totalMins;
+    $('pv-note').textContent=`✓ ${p.length} players · each plays with everyone once`;
+    box.style.display='block';
+  } else if(S.format==='king'){
+    const needed=S.courts*4;
+    const rounds=Math.max(1,Math.floor(S.totalMins/15));
+    $('pv-rounds').textContent=rounds;$('pv-mpr').textContent=15;$('pv-total').textContent=rounds*15;
+    $('pv-note').textContent=`Need ${needed} players (${S.courts} courts × 4)`;
+    box.style.display='block';
+  } else {
+    box.style.display='none';
+  }
+}
+
+function renderPlayers(){
+  $('players-list').innerHTML=S.names.map((name,i)=>`
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;position:relative">
+      <div style="width:28px;height:28px;border-radius:50%;background:rgba(160,120,40,.1);border:1px solid rgba(160,120,40,.3);display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',Georgia,serif;font-size:14px;color:#A07828;flex-shrink:0">${i+1}</div>
+      <div style="flex:1;position:relative">
+        <input type="text" value="${name.replace(/"/g,'&quot;')}" placeholder="Player ${i+1}"
+          oninput="onName(${i},this.value)" onfocus="showSug(${i})" onblur="setTimeout(()=>hideSug(${i}),200)"/>
+        <div id="sug-${i}" class="sug-list"></div>
+      </div>
+      <button onclick="setPos(${i},'L')" style="padding:10px 12px;border:1px solid ${S.pos[i]==='L'?'rgba(26,74,138,.5)':'rgba(140,100,30,.25)'};border-radius:3px;background:${S.pos[i]==='L'?'rgba(26,74,138,.1)':'#fff'};cursor:pointer;font-size:12px;font-weight:700;color:${S.pos[i]==='L'?'#1a4a8a':'#5a4a3a'};font-family:'Montserrat',sans-serif">L</button>
+      <button onclick="setPos(${i},'R')" style="padding:10px 12px;border:1px solid ${S.pos[i]==='R'?'rgba(138,26,26,.5)':'rgba(140,100,30,.25)'};border-radius:3px;background:${S.pos[i]==='R'?'rgba(138,26,26,.1)':'#fff'};cursor:pointer;font-size:12px;font-weight:700;color:${S.pos[i]==='R'?'#8a1a1a':'#5a4a3a'};font-family:'Montserrat',sans-serif">R</button>
+      ${i>=4?`<button onclick="removeP(${i})" style="background:transparent;border:1px solid rgba(192,57,43,.3);border-radius:3px;padding:10px 11px;cursor:pointer;font-size:14px;color:#c0392b">✕</button>`:''}
+    </div>`).join('');
+}
+
+function onName(i,v){S.names[i]=v;showSug(i);updatePreview();}
+function setPos(i,p){S.pos[i]=p;renderPlayers();updatePreview();}
+function removeP(i){S.names.splice(i,1);S.pos.splice(i,1);renderPlayers();updatePreview();}
+function addPlayer(){
+  const nL=S.pos.filter(p=>p==='L').length,nR=S.pos.filter(p=>p==='R').length;
+  S.names.push('');S.pos.push(nL<=nR?'L':'R');
+  renderPlayers();updatePreview();
+}
+
+function showSug(i){
+  const val=S.names[i].trim().toLowerCase();
+  const el=$('sug-'+i);if(!el)return;
+  if(!val){el.style.display='none';return;}
+  const m=hist.filter(h=>h.name.toLowerCase().startsWith(val)&&h.name!==S.names[i]).slice(0,4);
+  if(!m.length){el.style.display='none';return;}
+  el.innerHTML=m.map(x=>`<div class="sug-item" onmousedown="pickSug(${i},'${x.name.replace(/'/g,"\\'")}','${x.pos}')"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;color:#1a1a1a;flex:1">${x.name}</div>${tag(x.pos)}</div>`).join('');
+  el.style.display='block';
+}
+function hideSug(i){const el=$('sug-'+i);if(el)el.style.display='none';}
+function pickSug(i,name,pos){S.names[i]=name;S.pos[i]=pos;hideSug(i);renderPlayers();updatePreview();}
+
+// ── GROUPS ────────────────────────────────────────────────────
+function openGroups(){renderGroups();$('modal-groups').classList.add('open');}
+function closeGroups(){$('modal-groups').classList.remove('open');}
+function renderGroups(){
+  const el=$('groups-list');
+  if(!grps.length){el.innerHTML='<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:18px;color:#5a4a3a;text-align:center;padding:20px 0;font-style:italic">No groups saved yet</div>';return;}
+  el.innerHTML=grps.map((g,i)=>`
+    <div style="background:#fff;border:1px solid rgba(140,100,30,.2);border-radius:3px;padding:14px 16px;margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;color:#1a1a1a">${g.name}</div>
+          <div style="font-size:10px;color:#5a4a3a;margin-top:2px">${g.players.length} players · ${g.date}</div>
+        </div>
+        <button onclick="delGroup(${i})" style="background:transparent;border:none;font-size:16px;cursor:pointer;color:rgba(192,57,43,.5)">✕</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">
+        ${g.players.map(p=>`<div style="display:flex;align-items:center;gap:4px;background:rgba(160,120,40,.06);border:1px solid rgba(140,100,30,.15);border-radius:2px;padding:3px 8px"><span style="font-size:12px;color:#1a1a1a">${p.name}</span>${tag(p.pos)}</div>`).join('')}
+      </div>
+      <button onclick="loadGroup(${i})" style="width:100%;background:#1a2e44;color:#fff;border:none;border-radius:3px;padding:11px;cursor:pointer;font-size:12px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;font-family:'Montserrat',sans-serif">Load Group →</button>
+    </div>`).join('');
+}
+function saveGroup(){
+  const name=$('g-name').value.trim();if(!name)return;
+  const pl=S.names.map((n,i)=>({name:n.trim(),pos:S.pos[i]})).filter(p=>p.name);
+  if(pl.length<2)return;
+  grps=[{name,players:pl,date:fmtD()},...grps.filter(g=>g.name!==name)].slice(0,20);
+  LSset('ikos_grps_v4',grps);$('g-name').value='';renderGroups();
+}
+function loadGroup(i){const g=grps[i];S.names=g.players.map(p=>p.name);S.pos=g.players.map(p=>p.pos);renderPlayers();updatePreview();closeGroups();}
+function delGroup(i){grps.splice(i,1);LSset('ikos_grps_v4',grps);renderGroups();}
+
+// ── START DRAW ────────────────────────────────────────────────
+function startDraw(){
+  const p=vp();
+  const isAm=S.format==='americana';
+  const minP=isAm?4:S.courts*4;
+  const err=$('setup-err');
+  err.style.display='none';
+
+  if(p.length<minP){err.textContent=`⚠️ Min ${minP} players needed (${S.courts} courts × 4).`;err.style.display='block';return;}
+  if(p.length%2!==0){err.textContent='⚠️ Even number of players required.';err.style.display='block';return;}
+  if(!isAm&&S.courts<2){err.textContent='⚠️ King of the Court requires minimum 2 courts.';err.style.display='block';return;}
+  const ns=p.map(x=>x.name.toLowerCase());
+  if(ns.length!==new Set(ns).size){err.textContent='⚠️ Two players share the same name. Please add a surname or initial.';err.style.display='block';return;}
+
+  p.forEach(pl=>{if(!hist.find(h=>h.name.toLowerCase()===pl.name.toLowerCase()))hist.unshift({name:pl.name,pos:pl.pos});});
+  hist=hist.slice(0,50);LSset('ikos_hist_v4',hist);
+
+  const initSc={};p.forEach(pl=>initSc[pl.idx]=0);
+  S.players=p;S.scores=initSc;S.round=0;S.beeped=false;
+  S.photo=null;S.skip=false;S.kingWinners=[];
+
+  if(isAm){
+    const rm=Math.max(8,Math.round(S.totalMins/(p.length-1)));
+    S.sched=buildAmSchedule(p,S.courts);
+    S.totalRounds=p.length-1;S.roundMins=rm;S.secs=rm*60;
+    S.matches=(S.sched[0]?S.sched[0].matches:[]).map(m=>({...m}));
+    S.resting=S.sched[0]?S.sched[0].resting:[];
+  } else {
+    const rm=15,tr=Math.max(1,Math.floor(S.totalMins/rm));
+    S.totalRounds=tr;S.roundMins=rm;S.secs=rm*60;
+    S.matches=initKing(p,S.courts);
+    S.resting=[];
+  }
+  S.running=false;clearInterval(S.interval);
+
+  S.drawStep=0;
+  $('draw-envs').innerHTML=p.map((pl,i)=>`
+    <div class="env" id="env${i}">
+      <div class="env-sealed">✦ ✦ ✦</div>
+      <div class="env-content">
+        <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#A07828,#FFD97A);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#1a1a1a;flex-shrink:0">${i+1}</div>
+        <div style="flex:1;font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;color:#1a2e44">${pl.name}</div>
+        ${tag(pl.pos)}<span style="font-size:18px">✉️</span>
+      </div>
+    </div>`).join('');
+  $('draw-status').textContent=`Player 0 of ${p.length}`;
+  go('draw');
+
+  const iv=setInterval(()=>{
+    S.drawStep++;
+    const el=$('env'+(S.drawStep-1));
+    if(el)el.classList.add('open');
+    $('draw-status').textContent=S.drawStep>=p.length?'Starting...':`Player ${S.drawStep} of ${p.length}`;
+    if(S.drawStep>=p.length){clearInterval(iv);setTimeout(()=>{renderGame();go('game');},1200);}
+  },650);
+}
+
+// ── GAME ──────────────────────────────────────────────────────
+function renderGame(){
+  $('game-title').textContent=S.format==='americana'?'Americana':'King of the Court';
+  $('game-resort').textContent=S.resort;
+  updateTimerUI();renderBody();
+}
+
+function renderBody(){
+  const isAm=S.format==='americana';
+  const allDone=S.matches.length>0&&S.matches.every(m=>m.done);
+  let h=`<div class="slab">Round ${S.round+1} of ${S.totalRounds}</div>`;
+
+  S.matches.forEach((m,mi)=>{
+    const p1n=`<div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;color:#1a1a1a;line-height:1.3">${pName(m.p1[0])}</div><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;color:#5a4a3a;margin-top:3px">& ${pName(m.p1[1])}</div>`;
+    const p2n=`<div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;color:#1a1a1a;line-height:1.3">${pName(m.p2[0])}</div><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:17px;color:#5a4a3a;margin-top:3px">& ${pName(m.p2[1])}</div>`;
+    const p1t=`${tag(pPos(m.p1[0]))}${tag(pPos(m.p1[1]))}`;
+    const p2t=`${tag(pPos(m.p2[0]))}${tag(pPos(m.p2[1]))}`;
+    h+=`<div class="court-card${m.done?' done':''}">
+      <div class="court-top${m.done?' done':''}"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-size:10px;font-weight:700;color:#5a4a3a;text-transform:uppercase;letter-spacing:.12em">Court ${m.court}${!isAm&&m.court===1?' 👑':''}</div>
+        ${m.done?'<div style="font-size:10px;font-weight:700;color:#16a34a;border:1px solid rgba(22,163,74,.3);border-radius:2px;padding:2px 10px;text-transform:uppercase">✓ Done</div>':''}
+      </div>
+      <div class="score-grid">
+        <div style="text-align:center"><div style="display:flex;gap:4px;justify-content:center;margin-bottom:5px">${p1t}</div>${p1n}</div>
+        <div style="text-align:center;padding:0 8px">
+          <div style="font-size:9px;font-weight:700;color:#5a4a3a;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">Games</div>
+          <div style="display:flex;align-items:center;gap:5px;justify-content:center;margin-bottom:6px">
+            <button class="sc-btn" onclick="adj(${mi},1,1)">+</button>
+            <span class="sc-num" id="s1-${mi}">${m.s1}</span>
+            <span style="font-size:18px;color:#5a4a3a">:</span>
+            <span class="sc-num" id="s2-${mi}">${m.s2}</span>
+            <button class="sc-btn" onclick="adj(${mi},2,1)">+</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;justify-content:center">
+            <button class="sc-btn" style="font-size:16px" onclick="adj(${mi},1,-1)">−</button>
+            <div style="width:72px"></div>
+            <button class="sc-btn" style="font-size:16px" onclick="adj(${mi},2,-1)">−</button>
+          </div>
+        </div>
+        <div style="text-align:center"><div style="display:flex;gap:4px;justify-content:center;margin-bottom:5px">${p2t}</div>${p2n}</div>
+      </div>
+      ${!m.done?`<button class="btn btn-dark" style="margin-top:16px;margin-bottom:0" onclick="confirmM(${mi})">Confirm Result</button>`:''}
+    </div>`;
+  });
+
+  if(S.resting.length){
+    h+=`<div class="slab" style="margin-top:4px">⏳ Resting This Round</div><div style="background:#fff;border:1px solid rgba(140,100,30,.2);border-radius:3px;overflow:hidden;margin-bottom:16px">`;
+    S.resting.forEach((pair,i)=>{
+      h+=`<div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:${i<S.resting.length-1?'1px solid rgba(196,160,100,.08)':'none'}">
+        <span style="font-size:20px">⏳</span>${tag(pPos(pair[0]))}${tag(pPos(pair[1]))}
+        <div style="flex:1"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;color:#5a4a3a">${pName(pair[0])}</div><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;color:rgba(90,74,58,.7);margin-top:2px">& ${pName(pair[1])}</div></div>
+        <div style="font-size:10px;font-weight:700;color:rgba(90,74,58,.35);text-transform:uppercase">Resting</div>
+      </div>`;
+    });
+    h+='</div>';
+  }
+
+  h+=allDone
+    ?`<button class="btn btn-navy" onclick="nextRound()" style="margin-bottom:16px">${S.round+1>=S.totalRounds?'🏆 Final Results':'Next Round →'}</button>`
+    :`<div style="font-size:12px;color:rgba(90,74,58,.45);text-align:center;padding:10px;margin-bottom:10px">Confirm all courts to continue</div>`;
+
+  h+=`<div class="slab">Live Ranking — ${isAm?'Games Won':'Points'}</div><div style="background:#fff;border:1px solid rgba(140,100,30,.25);border-radius:3px;overflow:hidden;margin-bottom:10px">`;
+  [...S.players].sort((a,b)=>(S.scores[b.idx]||0)-(S.scores[a.idx]||0)).forEach((p,i)=>{
+    const bb=i===0?'#A07828':i===1?'rgba(160,120,40,.22)':i===2?'rgba(160,120,40,.1)':'#f5f2ee';
+    h+=`<div class="rank-row" style="background:${i===0?'rgba(160,120,40,.04)':'#fff'}">
+      <div class="rank-badge" style="background:${bb};color:${i===0?'#fff':'#5a4a3a'}">${i===0?'👑':i+1}</div>
+      ${tag(p.pos)}<div style="flex:1;font-size:14px;font-weight:${i<3?700:500};color:${i<3?'#1a1a1a':'#5a4a3a'}">${p.name}</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;color:${i===0?'#A07828':'#5a4a3a'}">${S.scores[p.idx]||0}</div>
+      <div style="font-size:9px;color:#5a4a3a;text-transform:uppercase;margin-left:4px">${isAm?'games':'pts'}</div>
+    </div>`;
+  });
+  h+='</div>';
+  $('game-body').innerHTML=h;
+}
+
+function adj(mi,side,delta){
+  const m=S.matches[mi];
+  if(side===1)m.s1=Math.max(0,m.s1+delta);else m.s2=Math.max(0,m.s2+delta);
+  $('s1-'+mi).textContent=m.s1;$('s2-'+mi).textContent=m.s2;
+}
+
+function confirmM(mi){
+  const m=S.matches[mi];m.done=true;
+  if(S.format==='americana'){
+    m.p1.forEach(i=>S.scores[i]=(S.scores[i]||0)+m.s1);
+    m.p2.forEach(i=>S.scores[i]=(S.scores[i]||0)+m.s2);
+  } else {
+    const w=m.s1>=m.s2?m.p1:m.p2,l=m.s1>=m.s2?m.p2:m.p1;
+    w.forEach(i=>S.scores[i]=(S.scores[i]||0)+3);
+    l.forEach(i=>S.scores[i]=(S.scores[i]||0)+1);
+  }
+  renderBody();
+}
+
+function nextRound(){
+  clearInterval(S.interval);S.running=false;S.beeped=false;
+  const nr=S.round+1;
+  if(nr>=S.totalRounds){endTournament();return;}
+  S.round=nr;S.secs=S.roundMins*60;
+  if(S.format==='americana'){
+    const rd=S.sched[nr];
+    S.matches=(rd?rd.matches:[]).map(m=>({...m}));
+    S.resting=rd?rd.resting:[];
+  } else {
+    kingNextRound();
+  }
+  updateTimerUI();renderBody();
+}
+
+function endTournament(){
+  clearInterval(S.interval);S.running=false;
+  if(S.format==='king'){
+    const c1=S.matches.find(m=>m.court===1);
+    if(c1){const kw=c1.done?(c1.s1>=c1.s2?[...c1.p1]:[...c1.p2]):[...c1.p1];S.kingWinners=kw;}
+    S.ranked=[...S.players].map(p=>({...p,total:S.scores[p.idx]||0,kw:S.kingWinners.includes(p.idx)}))
+      .sort((a,b)=>{if(a.kw&&!b.kw)return -1;if(!a.kw&&b.kw)return 1;return b.total-a.total;});
+  } else {
+    S.ranked=[...S.players].map(p=>({...p,total:S.scores[p.idx]||0})).sort((a,b)=>b.total-a.total);
+  }
+  if(S.ranked.length>0){
+    const monthly=LS('ikos_monthly_v4',[]);
+    const winName=S.format==='king'&&S.kingWinners.length>0?S.kingWinners.map(i=>pName(i)).join(' & '):S.ranked[0].name;
+    monthly.unshift({date:fmtD(),resort:S.resort,format:S.format==='americana'?'Americana':'King of the Court',winner:winName,pts:S.ranked[0].total,runner:S.ranked[1]?S.ranked[1].name:'',third:S.ranked[2]?S.ranked[2].name:''});
+    LSset('ikos_monthly_v4',monthly.slice(0,30));
+  }
+  renderResults();go('results');
+}
+
+// ── TIMER ─────────────────────────────────────────────────────
+function updateTimerUI(){
+  const col=S.secs<120?'#ff6b6b':S.secs<300?'#ffcc00':'#FFD97A';
+  $('t-display').textContent=S.secs===0&&!S.running?'TIME!':fmt(S.secs);
+  $('t-display').style.color=col;
+  $('t-btn').textContent=S.running?'⏸':'▶';
+  $('t-round').textContent=S.round+1;
+  $('t-total').textContent='/'+S.totalRounds;
+  $('t-left').textContent=(S.totalRounds-S.round-1)+' left';
+}
+
+function toggleTimer(){
+  if(S.running){clearInterval(S.interval);S.running=false;}
+  else{S.running=true;S.interval=setInterval(()=>{if(S.secs>0)S.secs--;else{clearInterval(S.interval);S.running=false;if(!S.beeped){beep();S.beeped=true;}}updateTimerUI();},1000);}
+  updateTimerUI();
+}
+
+// ── MANAGE ────────────────────────────────────────────────────
+function openManage(){S.mMins=S.roundMins;$('m-mins').textContent=S.mMins;const rem=S.totalRounds-S.round-1;$('m-info').innerHTML=`<b>${rem}</b> rounds remaining · <b>${rem*S.mMins} min</b> left`;$('modal-manage').classList.add('open');}
+function closeManage(){$('modal-manage').classList.remove('open');}
+function adjM(d){S.mMins=Math.max(5,Math.min(60,S.mMins+d));$('m-mins').textContent=S.mMins;const rem=S.totalRounds-S.round-1;$('m-info').innerHTML=`<b>${rem}</b> rounds remaining · <b>${rem*S.mMins} min</b> left`;}
+function applyManage(){S.roundMins=S.mMins;S.secs=S.mMins*60;S.running=false;clearInterval(S.interval);updateTimerUI();closeManage();}
+function earlyEnd(){closeManage();endTournament();}
+
+// ── RESULTS ───────────────────────────────────────────────────
+function renderResults(){
+  const isAm=S.format==='americana',r=S.ranked;
+  $('res-sub').textContent=`${isAm?'Americana':'King of the Court'} · ${S.resort} · ${fmtD()}`;
+  let h='';
+
+  if(!isAm&&S.kingWinners.length>0){
+    const kn=S.kingWinners.map(i=>pName(i)).join(' & ');
+    h+=`<div style="background:linear-gradient(135deg,#1a2e44,#0d1a28);border:1.5px solid #FFD97A;border-radius:3px;padding:20px 18px;margin-bottom:20px;text-align:center">
+      <div style="font-size:36px;margin-bottom:8px">👑</div>
+      <div style="font-size:9px;font-weight:700;letter-spacing:.25em;color:#FFD97A;text-transform:uppercase;margin-bottom:8px">King of the Court Champion</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:30px;color:#fff">${kn}</div>
+      <div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:6px">Won the final match on Court 1 👑</div>
+    </div>`;
+  }
+
+  h+=`<div style="background:#fff;border:1px solid #A07828;border-radius:3px;padding:22px;margin-bottom:20px;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#A07828,transparent)"></div>
+    <div class="slab">Podium</div>
+    <div style="display:flex;align-items:flex-end;justify-content:center;gap:10px">`;
+  [r[1],r[0],r[2]].forEach((p,i)=>{
+    if(!p){h+='<div style="flex:1"></div>';return;}
+    const medals=['🥈','👑','🥉'],hs=[60,90,40],w=i===1;
+    h+=`<div style="flex:1;text-align:center"><div style="font-size:${w?40:26}px;margin-bottom:5px">${medals[i]}</div><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:${w?22:17}px;color:#1a1a1a;line-height:1.2">${p.name}</div><div style="margin-top:3px">${tag(p.pos)}</div><div style="font-size:11px;font-weight:700;color:${w?'#A07828':'#5a4a3a'};margin-top:5px">${p.total} ${isAm?'games':'pts'}</div><div style="background:${w?'#A07828':'rgba(160,120,40,.15)'};height:${hs[i]}px;margin-top:8px;border-radius:2px 2px 0 0"></div></div>`;
+  });
+  h+=`</div></div><div class="slab">Full Ranking</div><div style="background:#fff;border:1px solid rgba(140,100,30,.25);border-radius:3px;overflow:hidden;margin-bottom:20px">`;
+  r.forEach((p,i)=>{
+    const bb=i===0?'#A07828':i===1?'rgba(160,120,40,.22)':i===2?'rgba(160,120,40,.1)':'#f5f2ee';
+    h+=`<div class="rank-row" style="background:${i===0?'rgba(160,120,40,.04)':'#fff'}"><div class="rank-badge" style="background:${bb};color:${i===0?'#fff':'#5a4a3a'}">${i===0?'👑':i+1}</div>${tag(p.pos)}<div style="flex:1;font-size:14px;font-weight:${i<3?700:500};color:${i<3?'#1a1a1a':'#5a4a3a'}">${p.name}</div><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;color:${i===0?'#A07828':'#5a4a3a'}">${p.total}</div><div style="font-size:9px;color:#5a4a3a;text-transform:uppercase;margin-left:4px">${isAm?'games':'pts'}</div></div>`;
+  });
+  h+=`</div>`;
+
+  const monthly=LS('ikos_monthly_v4',[]);
+  if(monthly.length>0){
+    h+=`<div class="slab">🏆 Champions History</div><div style="background:#fff;border:1px solid rgba(140,100,30,.25);border-radius:3px;overflow:hidden;margin-bottom:16px">`;
+    monthly.slice(0,10).forEach((m,i)=>{
+      h+=`<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:${i<Math.min(monthly.length,10)-1?'1px solid rgba(196,160,100,.08)':'none'};background:${i===0?'rgba(160,120,40,.04)':'#fff'}">
+        <div style="font-size:20px">${i===0?'👑':'🏅'}</div>
+        <div style="flex:1"><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;color:#1a1a1a">${m.winner}</div><div style="font-size:10px;color:#5a4a3a;margin-top:2px">${m.format} · ${m.resort} · ${m.date}</div>${m.runner?`<div style="font-size:11px;color:#8a7a6a;margin-top:2px">🥈 ${m.runner}${m.third?' · 🥉 '+m.third:''}</div>`:''}</div>
+        <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;color:#A07828">${m.pts}</div>
+      </div>`;
+    });
+    h+=`</div><button class="btn btn-outline" style="margin-bottom:10px" onclick="if(confirm('Clear champions history?')){localStorage.removeItem('ikos_monthly_v4');renderResults();}">🗑 Clear History</button>`;
+  }
+
+  h+=`<button class="btn btn-navy" onclick="go('card');renderCard()">📸 Winner Card &amp; Share</button><button class="btn btn-outline" onclick="newTournament()">New Tournament</button>`;
+  $('res-body').innerHTML=h;
+}
+
+// ── WINNER CARD ───────────────────────────────────────────────
+function renderCard(){
+  const isAm=S.format==='americana',r=S.ranked;
+  const winName=!isAm&&S.kingWinners.length>0?S.kingWinners.map(i=>pName(i)).join(' & '):(r[0]?r[0].name:'');
+  const winPts=r[0]?r[0].total:0;
+  const txt=`🏆 IKOS Motion · ${isAm?'Americana':'King of the Court'} · ${S.resort} · ${fmtD()}\n\n`+r.map((p,i)=>`${i===0?'👑':i===1?'🥈':i===2?'🥉':'  '} ${p.name} — ${p.total} ${isAm?'games':'pts'}`).join('\n')+'\n\nPowered by Rackstay for IKOS Motion';
+  const waUrl=`https://wa.me/?text=${encodeURIComponent(txt)}`;
+  const mailUrl=`mailto:?subject=${encodeURIComponent('IKOS Motion Results')}&body=${encodeURIComponent(txt)}`;
+  const photoEl=S.photo?`<img src="${S.photo}" style="width:100%;border-radius:4px;max-height:180px;object-fit:cover;margin-bottom:16px;opacity:.85"/>` :'';
+  const camSec=!S.photo&&!S.skip?`<div style="background:#fff;border:1.5px solid #A07828;border-radius:3px;padding:20px 18px;margin-bottom:20px;text-align:center"><div style="font-size:32px;margin-bottom:8px">📷</div><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;color:#1a1a1a;margin-bottom:6px">Add a group photo?</div><div style="font-size:12px;color:#5a4a3a;margin-bottom:16px">Take a photo of the winners to include in the card</div><div style="display:flex;gap:10px"><button onclick="openCamera()" style="flex:1;background:#1a2e44;color:#fff;border:none;border-radius:3px;padding:12px 8px;cursor:pointer;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-family:'Montserrat',sans-serif">📷 Take Photo</button><button onclick="S.skip=true;renderCard()" style="flex:1;background:transparent;border:1px solid rgba(140,100,30,.3);border-radius:3px;padding:12px 8px;cursor:pointer;font-size:12px;font-weight:600;color:#5a4a3a;font-family:'Montserrat',sans-serif">Skip</button></div></div>`:'';
+  const removeBtn=S.photo?`<button onclick="S.photo=null;S.skip=false;renderCard()" style="background:transparent;border:1px solid rgba(192,57,43,.3);border-radius:3px;padding:7px 14px;cursor:pointer;font-size:11px;color:#c0392b;margin-bottom:16px;display:block;font-family:'Montserrat',sans-serif">✕ Remove photo</button>`:'';
+  const cardHtml=(S.photo||S.skip)?`<div class="winner-card" id="winner-card-el">${photoEl}<div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;font-weight:300;letter-spacing:.18em;color:rgba(255,255,255,.92);margin-bottom:2px">ikos</div><div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px"><div style="width:16px;height:.5px;background:#FFD97A"></div><div style="font-size:7px;font-weight:700;letter-spacing:.4em;color:#FFD97A;text-transform:uppercase">MOTION</div><div style="width:16px;height:.5px;background:#FFD97A"></div></div><div style="font-size:44px;margin-bottom:8px">👑</div><div style="font-size:9px;font-weight:700;letter-spacing:.25em;color:rgba(196,160,100,.8);text-transform:uppercase;margin-bottom:8px">${isAm?'Americana':'King of the Court'} Champion</div><div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:34px;font-weight:300;color:#fff;margin-bottom:4px">${winName}</div><div style="width:50px;height:1px;background:#FFD97A;margin:12px auto"></div><div style="font-size:13px;font-weight:700;color:#FFD97A;margin-bottom:14px">${winPts} ${isAm?'Games':'Points'}</div>${r[1]||r[2]?`<div style="background:rgba(255,255,255,.08);border-radius:4px;padding:10px 12px;margin-bottom:14px">${r[1]?`<div style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:4px">🥈 ${r[1].name} · ${r[1].total} ${isAm?'games':'pts'}</div>`:''} ${r[2]?`<div style="font-size:11px;color:rgba(255,255,255,.45)">🥉 ${r[2].name} · ${r[2].total} ${isAm?'games':'pts'}</div>`:''}</div>`:''}<div style="font-size:9px;color:rgba(255,255,255,.3);letter-spacing:.12em">${fmtD()} · ${S.resort}</div><div style="font-size:8px;color:rgba(196,160,100,.4);letter-spacing:.15em;margin-top:4px;text-transform:uppercase">Created by Rackstay for IKOS Motion</div></div>${removeBtn}<button onclick="saveImg()" class="btn btn-navy" style="margin-bottom:10px">💾 Save Card as Image</button><div class="slab">Share Results</div><div style="background:#fff;border:1px solid rgba(140,100,30,.25);border-radius:3px;padding:16px;margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:#A07828;text-transform:uppercase;letter-spacing:.15em;margin-bottom:10px">Tap to select &amp; copy</div><textarea rows="6" onclick="this.select()" readonly>${txt}</textarea><div style="font-size:10px;color:#5a4a3a;margin-top:6px">👆 Tap text → select all → copy → paste into WhatsApp, email, etc.</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px"><a href="${waUrl}" target="_blank" class="btn btn-green" style="margin-bottom:0">💬 WhatsApp</a><a href="${mailUrl}" class="btn btn-navy" style="margin-bottom:0">✉️ Email</a></div><div style="background:rgba(160,120,40,.06);border:1px solid rgba(140,100,30,.2);border-radius:3px;padding:12px 14px;margin-bottom:12px;font-size:11px;font-weight:600;color:#5a4a3a;line-height:1.6"><b>To print or save PDF:</b> use your browser Share menu → Print.</div>`:'';
+  $('card-body').innerHTML=camSec+cardHtml+`<button class="btn btn-dark" style="margin-top:8px" onclick="newTournament()">New Tournament</button>`;
+}
+
+// ── CAMERA ────────────────────────────────────────────────────
+async function openCamera(){
+  try{
+    let stream;
+    try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});}
+    catch(e){stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});}
+    S.cam=stream;
+    const v=$('cam-video');v.srcObject=stream;v.setAttribute('playsinline','');v.muted=true;
+    await v.play();$('cam-overlay').classList.add('open');
+  }catch(e){alert('Camera not available.\nOn iPhone: Settings → Safari → Camera → Allow.');}
+}
+function snapPhoto(){
+  const v=$('cam-video');
+  const c=document.createElement('canvas');c.width=v.videoWidth;c.height=v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  S.photo=c.toDataURL('image/jpeg',.85);S.skip=true;closeCamera();renderCard();
+}
+function closeCamera(){if(S.cam)S.cam.getTracks().forEach(t=>t.stop());S.cam=null;$('cam-overlay').classList.remove('open');}
+
+async function saveImg(){
+  const el=$('winner-card-el');if(!el){alert('No winner card found.');return;}
+  try{
+    const canvas=await html2canvas(el,{backgroundColor:null,scale:2,useCORS:true,allowTaint:true});
+    const link=document.createElement('a');link.download='IKOS_Champion.png';link.href=canvas.toDataURL('image/png');link.click();
+  }catch(e){alert('To save: long-press the winner card and select "Save Image".');}
+}
+
+function newTournament(){S.names=['','','',''];S.pos=['L','R','L','R'];S.photo=null;S.skip=false;S.mix=false;renderSetup();go('setup');}
+
+document.addEventListener('DOMContentLoaded',function(){pickResort('Porto Petro');renderSetup();});
+</script>
+</body>
+</html>
