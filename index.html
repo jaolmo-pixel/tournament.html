@@ -1045,65 +1045,110 @@ function renderResults() {
 // ── WINNER CARD ───────────────────────────────────────────────
 function renderCard() {
   const isAm=S.format==='americana';
+  const isKing=isKingVariant();
   const r=S.ranked;
-  const shareText=`🏆 IKOS Motion · ${formatLabel()} · ${S.resort} · ${fmtDate()}\n\n`
-    +r.map((p,i)=>`${i===0?'👑':i===1?'🥈':i===2?'🥉':'  '} ${p.name} — ${p.total} ${isAm?'games':'pts'}`).join('\n')
-    +'\n\nPowered by Rackstay for IKOS Motion';
-  const waLink=`https://wa.me/?text=${encodeURIComponent(shareText)}`;
-  const mailLink=`mailto:?subject=${encodeURIComponent('IKOS Motion Results')}&body=${encodeURIComponent(shareText)}`;
+  const kw=S.kingWinnerIdxs||[];
 
-  const card=`<div class="winner-card" id="winner-card-el" style="margin-bottom:16px">
-    ${S.photo?`<img src="${S.photo}" style="width:100%;border-radius:4px;max-height:180px;object-fit:cover;margin-bottom:16px;opacity:0.85"/>`:''}
-    <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;font-weight:300;letter-spacing:0.18em;color:rgba(255,255,255,0.92);margin-bottom:2px">ikos</div>
-    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px">
-      <div style="width:16px;height:0.5px;background:#FFD97A"></div>
-      <div style="font-size:7px;font-weight:700;letter-spacing:0.4em;color:#FFD97A;text-transform:uppercase">MOTION</div>
-      <div style="width:16px;height:0.5px;background:#FFD97A"></div>
-    </div>
-    <div style="font-size:44px;margin-bottom:8px">👑</div>
-    <div style="font-size:9px;font-weight:700;letter-spacing:0.25em;color:rgba(196,160,100,0.8);text-transform:uppercase;margin-bottom:8px">${formatLabel()} Champion</div>
-    <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:34px;font-weight:300;color:#fff;margin-bottom:4px">${(r[0]&&r[0].name)||''}</div>
-    <div style="width:50px;height:1px;background:#FFD97A;margin:12px auto"></div>
-    <div style="font-size:13px;font-weight:700;color:#FFD97A;margin-bottom:14px">${(r[0]&&r[0].total)||0} ${isAm?'Games':'Points'}</div>
-    ${r[1]||r[2]?`<div style="background:rgba(255,255,255,0.08);border-radius:4px;padding:10px 12px;margin-bottom:14px">
-      ${r[1]?`<div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:4px">🥈 ${r[1].name} · ${r[1].total} ${isAm?'games':'pts'}</div>`:''}
-      ${r[2]?`<div style="font-size:11px;color:rgba(255,255,255,0.45)">🥉 ${r[2].name} · ${r[2].total} ${isAm?'games':'pts'}</div>`:''}
-    </div>`:''}
-    <div style="font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:0.12em">${fmtDate()} · ${S.resort}</div>
-    <div style="font-size:8px;color:rgba(196,160,100,0.4);letter-spacing:0.15em;margin-top:4px;text-transform:uppercase">Created by Rackstay for IKOS Motion</div>
-  </div>`;
+  // Share text
+  let shareText='\ud83c\udfc6 IKOS Motion \u00b7 '+formatLabel()+' \u00b7 '+S.resort+' \u00b7 '+fmtDate()+'\n\n';
+  if (isKing && kw.length>0) {
+    const champNames=kw.map(i=>pName(i)).join(' & ');
+    shareText+='\ud83d\udc51 CAMPEONES: '+champNames+'\n\nClasificaci\u00f3n:\n';
+    shareText+=r.map((p,i)=>(i+1)+'. '+p.name+' \u2014 '+p.total+' pts').join('\n');
+  } else {
+    shareText+=r.map((p,i)=>(i===0?'\ud83d\udc51':i===1?'\ud83e\udd48':i===2?'\ud83e\udd49':'  ')+' '+p.name+' \u2014 '+p.total+' '+(isAm?'games':'pts')).join('\n');
+  }
+  shareText+='\n\nPowered by Rackstay for IKOS Motion';
 
-  const cameraSection=!S.photo&&!S.skipPhoto?`
-    <div style="background:#fff;border:1.5px solid #A07828;border-radius:3px;padding:20px 18px;margin-bottom:20px;text-align:center">
-      <div style="font-size:32px;margin-bottom:8px">📷</div>
-      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:20px;color:#1a1a1a;margin-bottom:6px">Add a group photo?</div>
-      <div style="font-size:12px;color:#5a4a3a;margin-bottom:16px">Take a photo of the winners to include in the card</div>
-      <div style="display:flex;gap:10px">
-        <button onclick="openCamera()" style="flex:1;background:#1a2e44;color:#fff;border:none;border-radius:3px;padding:12px 8px;cursor:pointer;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em">📷 Take Photo</button>
-        <button onclick="S.skipPhoto=true;renderCard()" style="flex:1;background:transparent;border:1px solid rgba(140,100,30,0.3);border-radius:3px;padding:12px 8px;cursor:pointer;font-size:12px;font-weight:600;color:#5a4a3a">Skip</button>
-      </div>
-    </div>`:'';
+  const waLink='https://wa.me/?text='+encodeURIComponent(shareText);
+  const mailLink='mailto:?subject='+encodeURIComponent('IKOS Motion Results')+'&body='+encodeURIComponent(shareText);
 
-  const removeBtn=S.photo?`<button onclick="S.photo=null;S.skipPhoto=false;renderCard()" style="background:transparent;border:1px solid rgba(192,57,43,0.3);border-radius:3px;padding:7px 14px;cursor:pointer;font-size:11px;color:#c0392b;margin-bottom:16px;display:block">✕ Remove photo</button>`:'';
+  // Card inner content
+  let cardInner='';
+  if (isKing && kw.length>0) {
+    const champNames=kw.map(i=>pName(i));
+    const n1=champNames[0]||'', n2=champNames[1]||'';
+    cardInner=
+      '<div style="font-size:44px;margin-bottom:8px">\ud83d\udc51</div>'+
+      '<div style="font-size:9px;font-weight:700;letter-spacing:0.25em;color:rgba(196,160,100,0.8);text-transform:uppercase;margin-bottom:12px">Campeones \u00b7 '+formatLabel()+'</div>'+
+      '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:32px;font-weight:300;color:#fff;line-height:1.2;margin-bottom:4px">'+n1+'</div>'+
+      '<div style="font-size:16px;color:rgba(255,217,122,0.6);margin:4px 0">&amp;</div>'+
+      '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:32px;font-weight:300;color:#fff;line-height:1.2;margin-bottom:16px">'+n2+'</div>'+
+      '<div style="width:50px;height:1px;background:#FFD97A;margin:0 auto 16px"></div>'+
+      '<div style="background:rgba(255,255,255,0.07);border-radius:4px;padding:12px 14px;text-align:left">'+
+        '<div style="font-size:9px;font-weight:700;letter-spacing:0.2em;color:rgba(196,160,100,0.7);text-transform:uppercase;margin-bottom:10px;text-align:center">Clasificaci\u00f3n \u00b7 Puntos</div>'+
+        r.map(function(p,i){
+          const isChamp=kw.includes(p.idx);
+          return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:'+(i<r.length-1?'1px solid rgba(255,255,255,0.06)':'none')+'">'+
+            '<span style="font-size:11px;font-weight:700;color:'+(isChamp?'#FFD97A':'rgba(255,255,255,0.4)')+';min-width:20px">'+(isChamp?'\ud83d\udc51':i+1)+'</span>'+
+            '<span style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:16px;color:'+(isChamp?'#fff':'rgba(255,255,255,0.7)')+';flex:1">'+p.name+'</span>'+
+            '<span style="font-size:13px;font-weight:700;color:'+(isChamp?'#FFD97A':'rgba(255,255,255,0.5)')+'">'+p.total+' pts</span>'+
+          '</div>';
+        }).join('')+
+      '</div>';
+  } else {
+    const rk=r[0]&&r[0].name?r[0].name:'';
+    const rt=r[0]&&r[0].total?r[0].total:0;
+    cardInner=
+      '<div style="font-size:44px;margin-bottom:8px">\ud83d\udc51</div>'+
+      '<div style="font-size:9px;font-weight:700;letter-spacing:0.25em;color:rgba(196,160,100,0.8);text-transform:uppercase;margin-bottom:8px">Americana Champion</div>'+
+      '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:34px;font-weight:300;color:#fff;margin-bottom:4px">'+rk+'</div>'+
+      '<div style="width:50px;height:1px;background:#FFD97A;margin:12px auto"></div>'+
+      '<div style="font-size:13px;font-weight:700;color:#FFD97A;margin-bottom:14px">'+rt+' Games</div>'+
+      ((r[1]||r[2])?
+        '<div style="background:rgba(255,255,255,0.08);border-radius:4px;padding:10px 12px;margin-bottom:14px">'+
+        (r[1]?'<div style="font-size:12px;color:rgba(255,255,255,0.7);margin-bottom:4px">\ud83e\udd48 '+r[1].name+' \u00b7 '+r[1].total+' games</div>':'')+
+        (r[2]?'<div style="font-size:11px;color:rgba(255,255,255,0.45)">\ud83e\udd49 '+r[2].name+' \u00b7 '+r[2].total+' games</div>':'')+
+        '</div>':'');
+  }
 
-  const shareSection=(S.photo||S.skipPhoto)?`
-    <button onclick="saveImage()" style="width:100%;background:#1a2e44;color:#fff;border:none;border-radius:3px;padding:16px;cursor:pointer;font-size:13px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;position:relative;overflow:hidden">
-      💾 Save Card as Image
-      <div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:30%;height:1px;background:#FFD97A"></div>
-    </button>
-    <div class="slab">Share Results</div>
-    <div style="background:#fff;border:1px solid rgba(140,100,30,0.25);border-radius:3px;padding:16px;margin-bottom:12px">
-      <div style="font-size:11px;font-weight:700;color:#A07828;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:10px">Results — Tap to Select &amp; Copy</div>
-      <textarea class="share-text" onclick="this.select()" readonly>${shareText}</textarea>
-      <div style="font-size:10px;color:#5a4a3a;margin-top:6px">👆 Tap text above to select all, then copy and paste.</div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-      <a href="${waLink}" target="_blank" style="background:#25D366;color:#fff;border-radius:3px;padding:13px 8px;text-align:center;text-decoration:none;font-size:12px;font-weight:700;display:block">💬 WhatsApp</a>
-      <a href="${mailLink}" style="background:#1a2e44;color:#fff;border-radius:3px;padding:13px 8px;text-align:center;text-decoration:none;font-size:12px;font-weight:700;display:block">✉️ Email</a>
-    </div>`:'';
+  const photoHtml=S.photo?'<img src="'+S.photo+'" style="width:100%;border-radius:4px;max-height:180px;object-fit:cover;margin-bottom:16px;opacity:0.85"/>':'';
+
+  const card='<div class="winner-card" id="winner-card-el" style="margin-bottom:16px">'+
+    photoHtml+
+    '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:20px;font-weight:300;letter-spacing:0.18em;color:rgba(255,255,255,0.92);margin-bottom:2px">ikos</div>'+
+    '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px">'+
+      '<div style="width:16px;height:0.5px;background:#FFD97A"></div>'+
+      '<div style="font-size:7px;font-weight:700;letter-spacing:0.4em;color:#FFD97A;text-transform:uppercase">MOTION</div>'+
+      '<div style="width:16px;height:0.5px;background:#FFD97A"></div>'+
+    '</div>'+
+    cardInner+
+    '<div style="font-size:9px;color:rgba(255,255,255,0.3);letter-spacing:0.12em;margin-top:16px">'+fmtDate()+' \u00b7 '+S.resort+'</div>'+
+    '<div style="font-size:8px;color:rgba(196,160,100,0.4);letter-spacing:0.15em;margin-top:4px;text-transform:uppercase">Created by Rackstay for IKOS Motion</div>'+
+  '</div>';
+
+  const cameraSection=(!S.photo&&!S.skipPhoto)?
+    '<div style="background:#fff;border:1.5px solid #A07828;border-radius:3px;padding:20px 18px;margin-bottom:20px;text-align:center">'+
+      '<div style="font-size:32px;margin-bottom:8px">\ud83d\udcf7</div>'+
+      '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:20px;color:#1a1a1a;margin-bottom:6px">Add a group photo?</div>'+
+      '<div style="font-size:12px;color:#5a4a3a;margin-bottom:16px">Take a photo of the winners to include in the card</div>'+
+      '<div style="display:flex;gap:10px">'+
+        '<button onclick="openCamera()" style="flex:1;background:#1a2e44;color:#fff;border:none;border-radius:3px;padding:12px 8px;cursor:pointer;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em">\ud83d\udcf7 Take Photo</button>'+
+        '<button onclick="S.skipPhoto=true;renderCard()" style="flex:1;background:transparent;border:1px solid rgba(140,100,30,0.3);border-radius:3px;padding:12px 8px;cursor:pointer;font-size:12px;font-weight:600;color:#5a4a3a">Skip</button>'+
+      '</div>'+
+    '</div>':'';
+
+  const removeBtn=S.photo?
+    '<button onclick="S.photo=null;S.skipPhoto=false;renderCard()" style="background:transparent;border:1px solid rgba(192,57,43,0.3);border-radius:3px;padding:7px 14px;cursor:pointer;font-size:11px;color:#c0392b;margin-bottom:16px;display:block">\u2715 Remove photo</button>':'';
+
+  const shareSection=(S.photo||S.skipPhoto)?
+    '<button onclick="saveImage()" style="width:100%;background:#1a2e44;color:#fff;border:none;border-radius:3px;padding:16px;cursor:pointer;font-size:13px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:10px;position:relative;overflow:hidden">'+
+      '\ud83d\udcbe Save Card as Image'+
+      '<div style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:30%;height:1px;background:#FFD97A"></div>'+
+    '</button>'+
+    '<div class="slab">Share Results</div>'+
+    '<div style="background:#fff;border:1px solid rgba(140,100,30,0.25);border-radius:3px;padding:16px;margin-bottom:12px">'+
+      '<div style="font-size:11px;font-weight:700;color:#A07828;text-transform:uppercase;letter-spacing:0.15em;margin-bottom:10px">Results \u2014 Tap to Select &amp; Copy</div>'+
+      '<textarea class="share-text" onclick="this.select()" readonly>'+shareText+'</textarea>'+
+      '<div style="font-size:10px;color:#5a4a3a;margin-top:6px">\ud83d\udc46 Tap text above to select all, then copy and paste.</div>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'+
+      '<a href="'+waLink+'" target="_blank" style="background:#25D366;color:#fff;border-radius:3px;padding:13px 8px;text-align:center;text-decoration:none;font-size:12px;font-weight:700;display:block">\ud83d\udcac WhatsApp</a>'+
+      '<a href="'+mailLink+'" style="background:#1a2e44;color:#fff;border-radius:3px;padding:13px 8px;text-align:center;text-decoration:none;font-size:12px;font-weight:700;display:block">\u2709\ufe0f Email</a>'+
+    '</div>':'';
 
   document.getElementById('card-body').innerHTML=cameraSection+(S.photo||S.skipPhoto?card:'')+removeBtn+shareSection+
-    `<button class="btn btn-dark btn-gold-line" style="margin-top:8px" onclick="newTournament()">New Tournament</button>`;
+    '<button class="btn btn-dark btn-gold-line" style="margin-top:8px" onclick="newTournament()">New Tournament</button>';
 }
 
 // ── CAMERA ────────────────────────────────────────────────────
