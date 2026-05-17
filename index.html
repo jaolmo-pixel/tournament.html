@@ -592,13 +592,24 @@ function startDraw() {
     S.matches = ((S.sched[0] && S.sched[0].matches)||[]).map(m=>({...m}));
     S.resting = (S.sched[0] && S.sched[0].resting)||[];
   } else {
-    S.pairs = generatePairs(vp);
     const rm = 15;
-    const tr = Math.max(1,Math.floor(S.totalMins/rm));
+    const tr = Math.max(1, Math.floor(S.totalMins/rm));
     S.totalRounds = tr; S.roundMins = rm; S.timerSecs = rm*60;
+    // Initial pairs: shuffle players respecting L/R, then assign to courts
+    const ls = vp.filter(p=>p.pos==='L').sort(()=>Math.random()-0.5);
+    const rs = vp.filter(p=>p.pos==='R').sort(()=>Math.random()-0.5);
+    const allPairs = [];
+    const minLR = Math.min(ls.length, rs.length);
+    for (let i=0; i<minLR; i++) allPairs.push([ls[i].idx, rs[i].idx]);
+    // Handle odd L/R counts
+    const usedL = ls.slice(0,minLR).map(p=>p.idx);
+    const usedR = rs.slice(0,minLR).map(p=>p.idx);
+    const rem = vp.filter(p=>!usedL.includes(p.idx)&&!usedR.includes(p.idx));
+    for (let i=0; i+1<rem.length; i+=2) allPairs.push([rem[i].idx, rem[i+1].idx]);
+    S.pairs = allPairs;
     const m = [];
-    for (let c=0; c<S.courts && c*2+1<S.pairs.length; c++)
-      m.push({court:c+1,p1:c*2,p2:c*2+1,s1:0,s2:0,done:false});
+    for (let c=0; c<S.courts && c*2+1<allPairs.length; c++)
+      m.push({court:c+1, p1:allPairs[c*2], p2:allPairs[c*2+1], s1:0, s2:0, done:false});
     S.matches = m; S.resting = [];
   }
   S.timerRunning = false;
@@ -777,22 +788,81 @@ function nextRound() {
     S.matches=((S.sched[nr] && S.sched[nr].matches)||[]).map(m=>({...m}));
     S.resting=(S.sched[nr] && S.sched[nr].resting)||[];
   } else {
-    const nc=new Array(S.courts).fill(null).map(()=>({w:null,l:null}));
-    S.matches.forEach((m,ci)=>{
-      const win1=m.s1>=m.s2, w=win1?m.p1:m.p2, l=win1?m.p2:m.p1;
-      const up=Math.max(0,ci-1), dn=Math.min(S.courts-1,ci+1);
-      if(!nc[up].w)nc[up].w=w; else nc[up].l=w;
-      if(!nc[dn].l)nc[dn].l=l; else nc[dn].w=l;
-    });
-    S.matches=nc.map((c,ci)=>c.w!==null&&c.l!==null?{court:ci+1,p1:c.w,p2:c.l,s1:0,s2:0,done:false}:null).filter(Boolean);
-    S.resting=[];
+    kingNextRound();
   }
   updateTimer(); renderGameBody();
 }
 
+
+function kingNextRound() {
+  // Collect winners and losers from each court this round
+  const winners = [], losers = [];
+  S.matches.forEach((m, ci) => {
+    const win1 = m.s1 >= m.s2;
+    winners[ci] = win1 ? [...m.p1] : [...m.p2];
+    losers[ci]  = win1 ? [...m.p2] : [...m.p1];
+  });
+
+  const nC = S.matches.length;
+  const newMatches = [];
+
+  for (let ci = 0; ci < nC; ci++) {
+    // Court 0 (King): winners[0] stay + winners[1] rise up
+    // Court ci>0: losers[ci-1] drop down + losers[ci] stay
+    let groupA, groupB;
+    if (ci === 0) {
+      groupA = winners[0];
+      groupB = nC > 1 ? winners[1] : null;
+    } else {
+      groupA = losers[ci - 1]; // dropping from above
+      groupB = losers[ci];     // staying
+    }
+    if (!groupA || !groupB) continue;
+
+    // Re-form 2 pairs from the 4 players, respecting L/R positions
+    const pool = [...groupA, ...groupB];
+    const ls = pool.filter(i => pPos(i) === 'L');
+    const rs = pool.filter(i => pPos(i) === 'R');
+    let newP1, newP2;
+    if (ls.length >= 2 && rs.length >= 2) {
+      // Ideal: each pair gets one L and one R
+      newP1 = [ls[0], rs[0]];
+      newP2 = [ls[1], rs[1]];
+    } else {
+      // Fallback: split pool in half
+      newP1 = pool.slice(0, 2);
+      newP2 = pool.slice(2, 4);
+    }
+    newMatches.push({ court: ci + 1, p1: newP1, p2: newP2, s1: 0, s2: 0, done: false });
+  }
+
+  S.matches = newMatches;
+  S.resting = [];
+}
+
 function endTournament() {
   clearInterval(S.timerInterval); S.timerRunning=false;
-  S.ranked=[...S.players].map(p=>({...p,total:S.scores[p.idx]||0})).sort((a,b)=>b.total-a.total);
+
+  if (S.format === 'king') {
+    // King winner = pair that won the LAST match on Court 1
+    const court1 = S.matches.find(m => m.court === 1);
+    let kingWinners = [];
+    if (court1 && court1.done) {
+      kingWinners = court1.s1 >= court1.s2 ? [...court1.p1] : [...court1.p2];
+    } else if (court1) {
+      // Round ended early - whoever is on court 1 are the winners
+      kingWinners = [...court1.p1];
+    }
+    S.kingWinnerIdxs = kingWinners;
+    // Still rank by scores for display, but mark king winners
+    S.ranked = [...S.players].map(p => ({...p, total: S.scores[p.idx]||0, isKingWinner: kingWinners.includes(p.idx)})).sort((a,b)=>{
+      if (a.isKingWinner && !b.isKingWinner) return -1;
+      if (!a.isKingWinner && b.isKingWinner) return 1;
+      return b.total - a.total;
+    });
+  } else {
+    S.ranked = [...S.players].map(p=>({...p,total:S.scores[p.idx]||0})).sort((a,b)=>b.total-a.total);
+  }
   if (S.ranked.length > 0) {
     const monthly = load('ikos_monthly_v1', []);
     monthly.unshift({ date:fmtDate(), resort:S.resort, format:S.format==='americana'?'Americana':'King of the Court', winner:S.ranked[0].name, pts:S.ranked[0].total, runner:(S.ranked[1] && S.ranked[1].name)||'', third:(S.ranked[2] && S.ranked[2].name)||'' });
@@ -861,7 +931,20 @@ function renderResults() {
   const isAm=S.format==='americana';
   document.getElementById('results-sub').textContent=`${isAm?'Americana':'King of the Court'} · ${S.resort} · ${fmtDate()}`;
   const r=S.ranked;
-  let html=`<div style="background:#fff;border:1px solid #A07828;border-radius:3px;padding:22px;margin-bottom:20px;position:relative;overflow:hidden">
+  let html='';
+
+  // King winner banner
+  if (!isAm && S.kingWinnerIdxs && S.kingWinnerIdxs.length > 0) {
+    const kw = S.kingWinnerIdxs.map(i => pName(i)).join(' & ');
+    html += `<div style="background:linear-gradient(135deg,#1a2e44,#0d1a28);border:1.5px solid #FFD97A;border-radius:3px;padding:20px 18px;margin-bottom:20px;text-align:center">
+      <div style="font-size:36px;margin-bottom:8px">👑</div>
+      <div style="font-family:'Montserrat',sans-serif;font-size:9px;font-weight:700;letter-spacing:0.25em;color:#FFD97A;text-transform:uppercase;margin-bottom:8px">King of the Court Champion</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:30px;color:#fff">${kw}</div>
+      <div style="font-family:'Montserrat',sans-serif;font-size:10px;color:rgba(255,255,255,0.5);margin-top:6px">Won the final match on Court 1 👑</div>
+    </div>`;
+  }
+
+  html+=`<div style="background:#fff;border:1px solid #A07828;border-radius:3px;padding:22px;margin-bottom:20px;position:relative;overflow:hidden">
     <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,#A07828,transparent)"></div>
     <div class="slab">Podium</div>
     <div style="display:flex;align-items:flex-end;justify-content:center;gap:10px">`;
